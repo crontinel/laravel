@@ -1,0 +1,32 @@
+<?php
+
+declare(strict_types=1);
+
+namespace CronSentinel\Data;
+
+final readonly class QueueStatus
+{
+    public function __construct(
+        public string $connection,
+        public string $queue,
+        public int $depth,
+        public int $failedCount,
+        public ?int $oldestJobAgeSeconds,
+    ) {}
+
+    public function isHealthy(): bool
+    {
+        $depthThreshold    = config('cron-sentinel.queues.depth_alert_threshold', 1000);
+        $waitTimeThreshold = config('cron-sentinel.queues.wait_time_alert_seconds', 300);
+
+        if ($this->depth > $depthThreshold) {
+            return false;
+        }
+
+        if ($this->oldestJobAgeSeconds !== null && $this->oldestJobAgeSeconds > $waitTimeThreshold) {
+            return false;
+        }
+
+        return true;
+    }
+}

@@ -14,7 +14,7 @@ beforeEach(function () {
 });
 
 it('records a successful scheduled task run', function () {
-    $task = mockScheduledEvent('php artisan inspire');
+    $task = makeScheduledEvent('php artisan inspire');
 
     $listener = new RecordScheduledTaskRun();
     $listener->handleFinished(new ScheduledTaskFinished($task, 0.124));
@@ -28,7 +28,7 @@ it('records a successful scheduled task run', function () {
 });
 
 it('records a failed scheduled task run with exit code 1', function () {
-    $task      = mockScheduledEvent('php artisan send-invoices');
+    $task      = makeScheduledEvent('php artisan send-invoices');
     $exception = new \RuntimeException('Something went wrong');
 
     $listener = new RecordScheduledTaskRun();
@@ -45,7 +45,7 @@ it('records a failed scheduled task run with exit code 1', function () {
 it('does not record runs when cron monitoring is disabled', function () {
     config()->set('crontinel.cron.enabled', false);
 
-    $task     = mockScheduledEvent('php artisan inspire');
+    $task     = makeScheduledEvent('php artisan inspire');
     $listener = new RecordScheduledTaskRun();
     $listener->handleFinished(new ScheduledTaskFinished($task, 0.05));
 
@@ -55,7 +55,6 @@ it('does not record runs when cron monitoring is disabled', function () {
 it('prunes old cron runs beyond retain_days', function () {
     config()->set('crontinel.cron.retain_days', 7);
 
-    // Insert an old run manually
     CronRun::create([
         'command'     => 'php artisan old-task',
         'ran_at'      => now()->subDays(10),
@@ -65,22 +64,20 @@ it('prunes old cron runs beyond retain_days', function () {
 
     expect(CronRun::count())->toBe(1);
 
-    // Trigger a new run which also prunes
-    $task     = mockScheduledEvent('php artisan inspire');
+    $task     = makeScheduledEvent('php artisan inspire');
     $listener = new RecordScheduledTaskRun();
     $listener->handleFinished(new ScheduledTaskFinished($task, 0.05));
 
-    // Old run should be pruned, only the new one remains
     expect(CronRun::count())->toBe(1)
         ->and(CronRun::first()->command)->toBe('php artisan inspire');
 });
 
-// Helper: create a minimal mock of the scheduler Event object
-function mockScheduledEvent(string $command): object
+// Use Mockery to create a proper Illuminate\Console\Scheduling\Event mock
+function makeScheduledEvent(string $command): Event
 {
-    return new class ($command) {
-        public ?string $description = null;
+    $mock          = Mockery::mock(Event::class);
+    $mock->command = $command;
+    $mock->description = null;
 
-        public function __construct(public string $command) {}
-    };
+    return $mock;
 }

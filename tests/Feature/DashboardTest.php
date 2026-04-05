@@ -11,9 +11,6 @@ beforeEach(function () {
     $this->loadMigrationsFrom(__DIR__.'/../../database/migrations');
     $this->artisan('migrate', ['--database' => 'testing']);
 
-    // Disable auth middleware for testing
-    config()->set('crontinel.middleware', ['web']);
-
     $horizonMock = Mockery::mock(HorizonMonitor::class);
     $horizonMock->shouldReceive('status')->andReturn(new HorizonStatus(
         running: true,

@@ -15,7 +15,7 @@ Laravel-native Cron & Queue monitoring. Horizon internals, queue depth, dead-let
 ## Installation
 
 ```bash
-composer require harunrrayhan/cron-sentinel
+composer require harunrrayhan/crontinel
 php artisan cron-sentinel:install
 ```
 

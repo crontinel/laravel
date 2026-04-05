@@ -65,7 +65,7 @@
 - **Laravel Cashier** — Stripe billing
 - **Laravel Breeze** — auth (email/password + social TBD)
 
-### OSS package (`harunrrayhan/cron-sentinel` on Packagist)
+### OSS package (`harunrrayhan/crontinel` on Packagist)
 - Pure Laravel package, no external dependencies beyond Laravel itself
 - Self-contained Blade dashboard
 - Works without the SaaS — fully functional standalone

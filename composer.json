@@ -1,9 +1,9 @@
 {
-    "name": "harunrrayhan/cron-sentinel",
+    "name": "harunrrayhan/crontinel",
     "description": "Laravel-native Cron & Queue monitoring — Horizon internals, queue depth, dead-letter alerts, and cron health in one dashboard.",
     "type": "library",
     "license": "MIT",
-    "keywords": ["laravel", "queue", "horizon", "cron", "monitoring", "sentinel"],
+    "keywords": ["laravel", "queue", "horizon", "cron", "monitoring", "crontinel"],
     "authors": [
         {
             "name": "Harun Ray",

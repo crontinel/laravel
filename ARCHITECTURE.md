@@ -1,7 +1,7 @@
 # Crontinel — Architecture Decisions
 
-**Last updated:** 2026-04-05
-**Status:** Approved, pre-coding
+**Last updated:** 2026-04-05 (rev 2)
+**Status:** Approved, pre-coding — PRD in progress
 
 ---
 
@@ -18,11 +18,12 @@
 
 ## Domain structure
 
-| Domain | Purpose |
-|---|---|
-| `crontinel.com` | Marketing / landing page |
-| `app.crontinel.com` | Hosted SaaS dashboard |
-| `docs.crontinel.com` | Documentation (future) |
+| Domain | Purpose | Stack |
+|---|---|---|
+| `crontinel.com` | Marketing / landing page | Astro on CF Pages |
+| `app.crontinel.com` | Hosted SaaS dashboard | Laravel 12 on Hetzner |
+| `docs.crontinel.com` | Documentation | Astro Starlight on CF Pages |
+| `status.crontinel.com` | Status page | Gatus on Hetzner VPS |
 
 ---
 
@@ -38,6 +39,7 @@
 - After trial → drops to Free unless upgraded
 - Billing is per **team**, not per user
 - No per-seat pricing (keeps it simple)
+- **Annual discount: 20% off** (≈ 2 months free) — Pro $182/yr, Team $470/yr
 
 **Competitive anchor:** Cronitor $20/mo (20 monitors, generic). We give deeper Laravel-native insight at same price.
 
@@ -46,9 +48,13 @@
 ## Stack
 
 ### Landing page (`crontinel.com`)
-- **Astro** + Tailwind CSS
-- Deployed to **Cloudflare Pages** (free, static only — no SSR, no Worker memory issues)
-- Email capture → Resend or Mailchimp
+- **Astro** + Tailwind CSS — hybrid rendering
+- Core pages (`/`, `/pricing`, `/features`, `/about`) → `prerender=true` (static, zero Worker cost)
+- SEO pages (`/blog/*`, `/vs/*`, `/use-cases/*`, `/integrations/*`) → `prerender=false` (on-demand SSR via CF Worker)
+- Content source: MDX files in repo (no CMS dependency to start)
+- Deployed to **Cloudflare Pages free tier** — 100K Worker req/day, no file count issues with SSR approach
+- Email capture → Resend (free tier: 3K/mo)
+- Upgrade path: CF Workers Paid ($5/mo) when >100K req/day — no code changes needed
 
 ### SaaS app (`app.crontinel.com`)
 - **Laravel 12** (PHP 8.2+)
@@ -75,7 +81,9 @@
 | Database | MySQL on VPS | $0 |
 | Cache / queues | Redis on VPS | $0 |
 | Transactional email | Resend (free tier: 3K/mo) | $0 |
-| Landing page hosting | Cloudflare Pages | $0 |
+| Landing page hosting | Cloudflare Pages (free) | $0 |
+| Docs site | Astro Starlight on CF Pages (free) | $0 |
+| Status page | **Gatus** (Docker on same VPS) | $0 |
 | SSL | Let's Encrypt via Coolify | $0 |
 | **Total** | | **~€4/mo** |
 
@@ -148,11 +156,23 @@ This means the OSS package serves double duty: standalone self-hosted dashboard 
 
 ---
 
-## Still needs research / decision
+## Decisions log
 
-- [ ] Stripe pricing page design (annual discount? yes/no)
-- [ ] Email provider beyond Resend free tier (when >3K/mo)
-- [ ] Docs site stack (Astro Starlight vs Mintlify)
-- [ ] Status page: build in-house or embed Instatus/Betteruptime free tier
-- [ ] Social login (GitHub OAuth makes sense for dev tool — research UX impact)
-- [ ] ploy.cloud CF Pages memory fix (check build logs when CF access available)
+| Decision | Choice | Date |
+|---|---|---|
+| Product model | OSS package + hosted SaaS | 2026-04-05 |
+| Pricing tiers | Free / Pro $19 / Team $49 | 2026-04-05 |
+| Annual discount | 20% off (2 months free) | 2026-04-05 |
+| Landing page stack | Astro hybrid on CF Pages free | 2026-04-05 |
+| Docs site | Astro Starlight on CF Pages | 2026-04-05 |
+| Status page | Gatus on Hetzner VPS | 2026-04-05 |
+| Infra | Hetzner CX22 + Coolify (skip Forge) | 2026-04-05 |
+| OSS license | MIT | 2026-04-05 |
+| Billing | Laravel Cashier + Stripe | 2026-04-05 |
+| Teams model | Multi-user + multi-app per team | 2026-04-05 |
+
+## Still open (non-blocking)
+
+- [ ] GitHub OAuth — confirm yes/no before auth build starts
+- [ ] Email provider for >3K/mo (Resend paid vs Postmark vs SES)
+- [ ] ploy.cloud CF Pages memory fix — needs CF account access

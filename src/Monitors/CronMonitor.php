@@ -62,7 +62,7 @@ class CronMonitor
             return false;
         }
 
-        $threshold = config('cron-sentinel.cron.late_alert_after_seconds', 120);
+        $threshold = config('crontinel.cron.late_alert_after_seconds', 120);
 
         // If the next due time has passed by more than the threshold, we're late
         return now()->diffInSeconds($nextDue) > $threshold && $nextDue->isPast();

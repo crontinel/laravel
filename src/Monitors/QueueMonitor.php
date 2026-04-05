@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Crontinel\Monitors;
 
 use Crontinel\Data\QueueStatus;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Queue;
 use Illuminate\Queue\QueueManager;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 
 class QueueMonitor
 {
@@ -18,8 +18,8 @@ class QueueMonitor
      */
     public function all(): array
     {
-        $watchList = config('cron-sentinel.queues.watch', []);
-        $connection = config('queue.default');
+        $watchList  = config('crontinel.queues.watch', []);
+        $connection = config('queue.default', 'sync');
 
         return collect($this->resolveQueues($connection, $watchList))
             ->map(fn (string $queue) => $this->statusFor($connection, $queue))
@@ -29,32 +29,39 @@ class QueueMonitor
 
     public function statusFor(string $connection, string $queue): QueueStatus
     {
-        $depth        = $this->getDepth($connection, $queue);
-        $failedCount  = $this->getFailedCount($queue);
-        $oldestJob    = $this->getOldestJobAge($connection, $queue);
+        $driver = config("queue.connections.{$connection}.driver", 'sync');
 
         return new QueueStatus(
             connection: $connection,
             queue: $queue,
-            depth: $depth,
-            failedCount: $failedCount,
-            oldestJobAgeSeconds: $oldestJob,
+            depth: $this->getDepth($driver, $connection, $queue),
+            failedCount: $this->getFailedCount($queue),
+            oldestJobAgeSeconds: $this->getOldestJobAge($driver, $connection, $queue),
         );
     }
 
-    private function getDepth(string $connection, string $queue): int
+    private function getDepth(string $driver, string $connection, string $queue): int
     {
         try {
-            $driver = config("queue.connections.{$connection}.driver");
-
-            if ($driver === 'database') {
-                return DB::table('jobs')
-                    ->where('queue', $queue)
-                    ->count();
-            }
-
-            // Redis: use Horizon's queue size key if available
+            return match ($driver) {
+                'database' => DB::table('jobs')->where('queue', $queue)->count(),
+                'redis'    => $this->getRedisDepth($connection, $queue),
+                default    => 0,
+            };
+        } catch (\Throwable) {
             return 0;
+        }
+    }
+
+    private function getRedisDepth(string $connection, string $queue): int
+    {
+        try {
+            $redisConnection = config("queue.connections.{$connection}.connection", 'default');
+
+            $pending = (int) Redis::connection($redisConnection)->llen("queues:{$queue}");
+            $delayed = (int) Redis::connection($redisConnection)->zcard("queues:{$queue}:delayed");
+
+            return $pending + $delayed;
         } catch (\Throwable) {
             return 0;
         }
@@ -63,29 +70,49 @@ class QueueMonitor
     private function getFailedCount(string $queue): int
     {
         try {
-            return DB::table('failed_jobs')
-                ->where('queue', $queue)
-                ->count();
+            return DB::table('failed_jobs')->where('queue', $queue)->count();
         } catch (\Throwable) {
             return 0;
         }
     }
 
-    private function getOldestJobAge(string $connection, string $queue): ?int
+    private function getOldestJobAge(string $driver, string $connection, string $queue): ?int
     {
         try {
-            $driver = config("queue.connections.{$connection}.driver");
+            return match ($driver) {
+                'database' => $this->getDatabaseOldestJobAge($queue),
+                'redis'    => $this->getRedisOldestJobAge($connection, $queue),
+                default    => null,
+            };
+        } catch (\Throwable) {
+            return null;
+        }
+    }
 
-            if ($driver === 'database') {
-                $oldest = DB::table('jobs')
-                    ->where('queue', $queue)
-                    ->orderBy('created_at')
-                    ->value('created_at');
+    private function getDatabaseOldestJobAge(string $queue): ?int
+    {
+        $oldest = DB::table('jobs')
+            ->where('queue', $queue)
+            ->orderBy('created_at')
+            ->value('created_at');
 
-                return $oldest ? now()->diffInSeconds($oldest) : null;
+        return $oldest ? now()->diffInSeconds($oldest) : null;
+    }
+
+    private function getRedisOldestJobAge(string $connection, string $queue): ?int
+    {
+        try {
+            $redisConnection = config("queue.connections.{$connection}.connection", 'default');
+            $raw             = Redis::connection($redisConnection)->lindex("queues:{$queue}", -1);
+
+            if (! $raw) {
+                return null;
             }
 
-            return null;
+            $payload  = json_decode($raw, true);
+            $pushedAt = $payload['pushedAt'] ?? null;
+
+            return $pushedAt ? (int) (time() - (int) $pushedAt) : null;
         } catch (\Throwable) {
             return null;
         }
@@ -97,15 +124,26 @@ class QueueMonitor
             return $watchList;
         }
 
-        // Auto-discover queues from the jobs table
-        try {
-            $driver = config("queue.connections.{$connection}.driver");
+        $driver = config("queue.connections.{$connection}.driver", 'sync');
 
+        try {
             if ($driver === 'database') {
-                return DB::table('jobs')
-                    ->distinct()
-                    ->pluck('queue')
+                $queues = DB::table('jobs')->distinct()->pluck('queue')->all();
+                return ! empty($queues) ? $queues : ['default'];
+            }
+
+            if ($driver === 'redis') {
+                $redisConnection = config("queue.connections.{$connection}.connection", 'default');
+                $keys            = Redis::connection($redisConnection)->keys('queues:*');
+
+                $queues = collect($keys)
+                    ->map(fn ($key) => preg_replace('/^queues:(.+?)(:delayed|:reserved)?$/', '$1', $key))
+                    ->unique()
+                    ->filter(fn ($q) => ! str_contains((string) $q, ':'))
+                    ->values()
                     ->all();
+
+                return ! empty($queues) ? $queues : ['default'];
             }
         } catch (\Throwable) {}
 

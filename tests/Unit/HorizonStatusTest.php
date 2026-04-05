@@ -38,7 +38,7 @@ it('is unhealthy when paused', function () {
 });
 
 it('is unhealthy when failed jobs per minute exceeds threshold', function () {
-    config()->set('cron-sentinel.horizon.failed_jobs_per_minute_threshold', 5);
+    config()->set('crontinel.horizon.failed_jobs_per_minute_threshold', 5);
 
     $status = new HorizonStatus(
         running: true,

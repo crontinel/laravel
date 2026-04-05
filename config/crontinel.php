@@ -7,9 +7,9 @@ return [
     |--------------------------------------------------------------------------
     | Dashboard Path
     |--------------------------------------------------------------------------
-    | The URI path where the Cron Sentinel dashboard is accessible.
+    | The URI path where the Crontinel dashboard is accessible.
     */
-    'path' => env('CRON_SENTINEL_PATH', 'crontinel'),
+    'path' => env('CRONTINEL_PATH', 'crontinel'),
 
     /*
     |--------------------------------------------------------------------------
@@ -20,16 +20,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | SaaS Reporting
+    |--------------------------------------------------------------------------
+    | Set CRONTINEL_API_KEY to connect this app to the hosted SaaS.
+    */
+    'saas_key' => env('CRONTINEL_API_KEY'),
+    'saas_url' => env('CRONTINEL_API_URL', 'https://app.crontinel.com'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Horizon Integration
     |--------------------------------------------------------------------------
     | Set to false if you are not using Laravel Horizon.
     */
     'horizon' => [
-        'enabled' => env('CRON_SENTINEL_HORIZON', true),
-        // Alert when any supervisor has been paused or missing for N seconds
-        'supervisor_alert_after_seconds' => 60,
-        // Alert when failed jobs per minute exceeds this threshold
+        'enabled'                          => env('CRONTINEL_HORIZON', true),
+        'supervisor_alert_after_seconds'   => 60,
         'failed_jobs_per_minute_threshold' => 5,
+        'connection'                       => env('CRONTINEL_HORIZON_CONNECTION', 'horizon'),
     ],
 
     /*
@@ -38,12 +46,9 @@ return [
     |--------------------------------------------------------------------------
     */
     'queues' => [
-        'enabled' => true,
-        // Queues to monitor. Empty array = monitor all queues.
-        'watch' => [],
-        // Alert when queue depth exceeds this number of pending jobs
+        'enabled'               => true,
+        'watch'                 => [],
         'depth_alert_threshold' => 1000,
-        // Alert when a job has been waiting longer than N seconds
         'wait_time_alert_seconds' => 300,
     ],
 
@@ -53,26 +58,25 @@ return [
     |--------------------------------------------------------------------------
     */
     'cron' => [
-        'enabled' => true,
-        // Alert when a scheduled command misses its expected run by N seconds
+        'enabled'                  => true,
         'late_alert_after_seconds' => 120,
-        // How many days of cron history to retain
-        'retain_days' => 30,
+        'retain_days'              => 30,
     ],
 
     /*
     |--------------------------------------------------------------------------
     | Alert Channels
     |--------------------------------------------------------------------------
-    | Supported: "mail", "slack", "null"
+    | Supported: "mail", "slack", null
+    | Set CRONTINEL_ALERT_CHANNEL to "mail" or "slack" to enable alerts.
     */
     'alerts' => [
-        'channel' => env('CRON_SENTINEL_ALERT_CHANNEL', 'null'),
+        'channel' => env('CRONTINEL_ALERT_CHANNEL'),
         'mail' => [
-            'to' => env('CRON_SENTINEL_ALERT_EMAIL'),
+            'to' => env('CRONTINEL_ALERT_EMAIL'),
         ],
         'slack' => [
-            'webhook_url' => env('CRON_SENTINEL_SLACK_WEBHOOK'),
+            'webhook_url' => env('CRONTINEL_SLACK_WEBHOOK'),
         ],
     ],
 ];

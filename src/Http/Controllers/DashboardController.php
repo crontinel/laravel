@@ -21,19 +21,19 @@ class DashboardController extends Controller
 
     public function __invoke(): View
     {
-        return view('cron-sentinel::dashboard', [
-            'horizon' => config('cron-sentinel.horizon.enabled') ? $this->horizon->status() : null,
-            'queues'  => config('cron-sentinel.queues.enabled') ? $this->queue->all() : [],
-            'crons'   => config('cron-sentinel.cron.enabled') ? $this->cron->all() : [],
+        return view('crontinel::dashboard', [
+            'horizon' => config('crontinel.horizon.enabled') ? $this->horizon->status() : null,
+            'queues'  => config('crontinel.queues.enabled') ? $this->queue->all() : [],
+            'crons'   => config('crontinel.cron.enabled') ? $this->cron->all() : [],
         ]);
     }
 
     public function apiStatus(): JsonResponse
     {
         return response()->json([
-            'horizon' => config('cron-sentinel.horizon.enabled') ? $this->horizon->status() : null,
-            'queues'  => config('cron-sentinel.queues.enabled') ? $this->queue->all() : [],
-            'crons'   => config('cron-sentinel.cron.enabled') ? $this->cron->all() : [],
+            'horizon' => config('crontinel.horizon.enabled') ? $this->horizon->status() : null,
+            'queues'  => config('crontinel.queues.enabled') ? $this->queue->all() : [],
+            'crons'   => config('crontinel.cron.enabled') ? $this->cron->all() : [],
             'checked_at' => now()->toIso8601String(),
         ]);
     }

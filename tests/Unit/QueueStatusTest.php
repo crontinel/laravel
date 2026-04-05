@@ -17,7 +17,7 @@ it('is healthy when depth and wait time are within thresholds', function () {
 });
 
 it('is unhealthy when depth exceeds threshold', function () {
-    config()->set('cron-sentinel.queues.depth_alert_threshold', 100);
+    config()->set('crontinel.queues.depth_alert_threshold', 100);
 
     $status = new QueueStatus(
         connection: 'redis',
@@ -31,7 +31,7 @@ it('is unhealthy when depth exceeds threshold', function () {
 });
 
 it('is unhealthy when oldest job wait time exceeds threshold', function () {
-    config()->set('cron-sentinel.queues.wait_time_alert_seconds', 300);
+    config()->set('crontinel.queues.wait_time_alert_seconds', 300);
 
     $status = new QueueStatus(
         connection: 'redis',

@@ -1,16 +1,30 @@
-# Cron Sentinel — [crontinel.com](https://crontinel.com)
+# Crontinel
 
-Laravel-native Cron & Queue monitoring. Horizon internals, queue depth, dead-letter alerts, and cron health — in one dashboard.
+[![Latest Version](https://img.shields.io/packagist/v/harunrrayhan/crontinel.svg)](https://packagist.org/packages/harunrrayhan/crontinel)
+[![License](https://img.shields.io/github/license/HarunRRayhan/crontinel.svg)](LICENSE)
 
-**Generic monitors only check if a job pinged back. Cron Sentinel sees inside Horizon.**
+**Laravel-native Cron & Queue monitoring.** Monitors Horizon internals, queue depth, and cron health — things generic monitors can't see.
+
+> Cronitor tells you a job ran. Crontinel tells you your Horizon supervisor is paused.
+
+---
 
 ## What it monitors
 
-- **Horizon supervisor health** — running, paused, or missing supervisors
-- **Queue depth** — pending jobs per queue with configurable alert thresholds
-- **Failed jobs** — per-queue failed job counts + failed-per-minute rate
-- **Dead-letter queue** — jobs that exhausted all retries
-- **Scheduled commands** — missed, late, or failed cron jobs with duration history
+| Monitor | What it sees |
+|---|---|
+| **Horizon** | Supervisor status (per supervisor, not just "Horizon is running"), paused state, failed jobs per minute |
+| **Queues** | Depth per queue, failed count, oldest job age — Redis and database drivers |
+| **Cron jobs** | Every scheduled command run: exit code, duration, late detection |
+
+---
+
+## Requirements
+
+- PHP 8.2+
+- Laravel 11 or 12
+
+---
 
 ## Installation
 
@@ -19,36 +33,133 @@ composer require harunrrayhan/crontinel
 php artisan crontinel:install
 ```
 
-Visit `/cron-sentinel` in your browser.
+That's it. Visit `/crontinel` in your browser.
 
-## CLI check
+`crontinel:install` publishes the config file and runs the migration for the `crontinel_runs` table.
+
+**Cron run tracking is automatic** — Crontinel listens to Laravel's `ScheduledTaskFinished` and `ScheduledTaskFailed` events. No wrapping or modification of your scheduled commands needed.
+
+---
+
+## CLI health check
 
 ```bash
+# Table output (human-readable)
 php artisan crontinel:check
+
+# JSON output (for CI/CD integration)
 php artisan crontinel:check --format=json
+
+# Check without firing alerts
+php artisan crontinel:check --no-alerts
 ```
+
+Exits with code `0` when all monitors are healthy, `1` if any alert is active. Use this in CI or monitoring pipelines.
+
+---
 
 ## Configuration
 
 After install, edit `config/crontinel.php`:
 
 ```php
-'horizon' => [
-    'enabled' => true,
-    'failed_jobs_per_minute_threshold' => 5,
-],
-'queues' => [
-    'watch' => ['default', 'emails', 'heavy'],
-    'depth_alert_threshold' => 1000,
-],
-'alerts' => [
-    'channel' => 'slack',
-    'slack' => ['webhook_url' => env('CRON_SENTINEL_SLACK_WEBHOOK')],
-],
+return [
+    // Dashboard URL path (default: /crontinel)
+    'path' => env('CRONTINEL_PATH', 'crontinel'),
+
+    // Dashboard middleware
+    'middleware' => ['web', 'auth'],
+
+    // Connect to Crontinel SaaS for multi-app hosted dashboards
+    'saas_key' => env('CRONTINEL_API_KEY'),
+    'saas_url' => env('CRONTINEL_API_URL', 'https://app.crontinel.com'),
+
+    'horizon' => [
+        'enabled'                          => true,
+        'supervisor_alert_after_seconds'   => 60,
+        'failed_jobs_per_minute_threshold' => 5,
+        'connection'                       => 'horizon', // Redis connection name for Horizon
+    ],
+
+    'queues' => [
+        'enabled'                 => true,
+        'watch'                   => [],    // empty = auto-discover
+        'depth_alert_threshold'   => 1000,
+        'wait_time_alert_seconds' => 300,
+    ],
+
+    'cron' => [
+        'enabled'                  => true,
+        'late_alert_after_seconds' => 120,
+        'retain_days'              => 30,
+    ],
+
+    'alerts' => [
+        'channel' => env('CRONTINEL_ALERT_CHANNEL'), // 'slack' or 'mail'
+        'mail'  => ['to' => env('CRONTINEL_ALERT_EMAIL')],
+        'slack' => ['webhook_url' => env('CRONTINEL_SLACK_WEBHOOK')],
+    ],
+];
 ```
 
-## Requirements
+### Environment variables
 
-- PHP 8.2+
-- Laravel 11 or 12
-- Laravel Horizon (optional, for Horizon monitoring)
+```env
+# Dashboard path (optional)
+CRONTINEL_PATH=crontinel
+
+# Alerts — set channel to 'slack' or 'mail'
+CRONTINEL_ALERT_CHANNEL=slack
+CRONTINEL_SLACK_WEBHOOK=https://hooks.slack.com/...
+CRONTINEL_ALERT_EMAIL=ops@yourcompany.com
+
+# SaaS reporting (optional)
+CRONTINEL_API_KEY=your-api-key
+```
+
+---
+
+## Alerts
+
+Crontinel fires alerts when:
+
+- Horizon is stopped or paused
+- A supervisor process goes down
+- Failed jobs per minute exceeds threshold
+- Queue depth or oldest job age exceeds threshold
+- A scheduled command exits with non-zero code
+- A scheduled command is late (missed its expected run window)
+
+Alerts **auto-resolve** and send a "resolved" notification when the issue clears.
+
+**Alert deduplication:** The same alert won't fire more than once per 5 minutes for the same issue.
+
+---
+
+## Connecting to Crontinel SaaS
+
+The OSS package works standalone. To get multi-app hosted dashboards, longer history, and team access:
+
+1. Sign up at [app.crontinel.com](https://app.crontinel.com)
+2. Create an app and copy the API key
+3. Add to your `.env`:
+
+```env
+CRONTINEL_API_KEY=your-api-key
+```
+
+The package will automatically report health data to the SaaS dashboard.
+
+---
+
+## Not using Horizon?
+
+Set `horizon.enabled = false` in config. Queue and cron monitoring work independently.
+
+---
+
+## License
+
+MIT — free forever. See [LICENSE](LICENSE).
+
+Built by [Harun Ray](https://github.com/HarunRRayhan) · [crontinel.com](https://crontinel.com)

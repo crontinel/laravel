@@ -17,7 +17,7 @@ final readonly class HorizonStatus
 
     public function isHealthy(): bool
     {
-        $threshold = config('cron-sentinel.horizon.failed_jobs_per_minute_threshold', 5);
+        $threshold = config('crontinel.horizon.failed_jobs_per_minute_threshold', 5);
 
         return $this->running
             && $this->pausedAt === null

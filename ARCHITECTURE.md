@@ -59,8 +59,8 @@
 ### SaaS app (`app.crontinel.com`)
 - **Laravel 12** (PHP 8.2+)
 - **Livewire 3** + Alpine.js — real-time dashboard, no JS build step
-- **MySQL** (production) / SQLite (local dev)
-- **Redis** — queues + cache
+- **PostgreSQL** — primary database (founder is a Postgres expert, always Postgres)
+- **Redis** — queues + cache (start here; SQS migration path available later)
 - **Laravel Horizon** — queue worker management (dogfooding)
 - **Laravel Cashier** — Stripe billing
 - **Laravel Breeze** — auth (email/password + social TBD)
@@ -72,23 +72,41 @@
 
 ---
 
-## Infrastructure (minimal spend)
+## Infrastructure
+
+Founder is a DevOps engineer — handles server provisioning, Nginx, PHP-FPM, Redis, and deployments manually. No Coolify or Forge needed.
+
+### If AWS credits approved (preferred)
+
+| Component | Choice | Notes |
+|---|---|---|
+| App server | EC2 (t3.small or t3.medium) | PHP-FPM + Nginx |
+| Database | RDS PostgreSQL or Aurora PostgreSQL Serverless | Separate managed, not on EC2 |
+| Cache + queues | ElastiCache Redis | Start here; migrate to SQS later if needed |
+| Email | SES (free tier: 62K/mo) | Or Resend — decide at build time |
+| Landing page | Cloudflare Pages (free) | Static Astro |
+| Docs | Cloudflare Pages (free) | Astro Starlight |
+| Status page | Gatus on EC2 | Separate Docker container |
+| SSL | ACM (free with ALB) or Let's Encrypt | |
+
+**DB fallback within AWS:** If Aurora Serverless cost is unpredictable early on, start with RDS PostgreSQL t3.micro (free tier eligible).
+
+### If Hetzner (fallback, no AWS credits)
 
 | Component | Choice | Cost/mo |
 |---|---|---|
-| VPS | Hetzner CX22 (2 vCPU, 4GB RAM) | ~€4 |
-| Deploy / server mgmt | **Coolify** (self-hosted on same VPS) | $0 |
-| Database | MySQL on VPS | $0 |
-| Cache / queues | Redis on VPS | $0 |
-| Transactional email | Resend (free tier: 3K/mo) | $0 |
-| Landing page hosting | Cloudflare Pages (free) | $0 |
-| Docs site | Astro Starlight on CF Pages (free) | $0 |
-| Status page | **Gatus** (Docker on same VPS) | $0 |
-| SSL | Let's Encrypt via Coolify | $0 |
-| **Total** | | **~€4/mo** |
+| App server | Hetzner CX22 (2 vCPU, 4GB) | ~€4 |
+| Database | **Neon** (serverless Postgres, free tier: 0.5GB) | $0 → $19 when scaling |
+| Cache + queues | Redis on VPS | $0 |
+| Email | Resend (free: 3K/mo) | $0 |
+| Landing + Docs | Cloudflare Pages (free) | $0 |
+| Status page | Gatus on same VPS | $0 |
+| SSL | Let's Encrypt (certbot) | $0 |
+| **Total** | | **~€4–23/mo** |
 
-> Skip Laravel Forge ($12/mo). Coolify handles provisioning, deploys, SSL, env vars.
-> Upgrade to Forge or a bigger server when revenue justifies it.
+**Why Neon over self-hosted Postgres on Hetzner:** Neon gives managed backups, point-in-time recovery, and branching (useful for staging) without paying for a separate DB server. Free tier covers early stage.
+
+**Alternative to Neon:** Supabase free tier (500MB Postgres, also managed).
 
 ---
 
@@ -166,7 +184,9 @@ This means the OSS package serves double duty: standalone self-hosted dashboard 
 | Landing page stack | Astro hybrid on CF Pages free | 2026-04-05 |
 | Docs site | Astro Starlight on CF Pages | 2026-04-05 |
 | Status page | Gatus on Hetzner VPS | 2026-04-05 |
-| Infra | Hetzner CX22 + Coolify (skip Forge) | 2026-04-05 |
+| Database | PostgreSQL always (RDS/Aurora on AWS, Neon/Supabase on Hetzner) | 2026-04-05 |
+| Queue driver | Redis (start), SQS migration path available later | 2026-04-05 |
+| Infra | AWS EC2 (if credits) or Hetzner VPS — DevOps handled by founder | 2026-04-05 |
 | OSS license | MIT | 2026-04-05 |
 | Billing | Laravel Cashier + Stripe | 2026-04-05 |
 | Teams model | Multi-user + multi-app per team | 2026-04-05 |

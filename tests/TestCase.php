@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace CronSentinel\Tests;
+namespace Crontinel\Tests;
 
-use CronSentinel\CronSentinelServiceProvider;
+use Crontinel\CrontinelServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 class TestCase extends Orchestra
 {
     protected function getPackageProviders($app): array
     {
-        return [CronSentinelServiceProvider::class];
+        return [CrontinelServiceProvider::class];
     }
 
     protected function defineEnvironment($app): void

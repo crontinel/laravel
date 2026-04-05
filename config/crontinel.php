@@ -9,7 +9,7 @@ return [
     |--------------------------------------------------------------------------
     | The URI path where the Cron Sentinel dashboard is accessible.
     */
-    'path' => env('CRON_SENTINEL_PATH', 'cron-sentinel'),
+    'path' => env('CRON_SENTINEL_PATH', 'crontinel'),
 
     /*
     |--------------------------------------------------------------------------

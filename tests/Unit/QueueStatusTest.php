@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use CronSentinel\Data\QueueStatus;
+use Crontinel\Data\QueueStatus;
 
 it('is healthy when depth and wait time are within thresholds', function () {
     $status = new QueueStatus(

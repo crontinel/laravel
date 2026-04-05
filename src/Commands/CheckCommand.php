@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace CronSentinel\Commands;
+namespace Crontinel\Commands;
 
-use CronSentinel\Monitors\HorizonMonitor;
-use CronSentinel\Monitors\QueueMonitor;
-use CronSentinel\Monitors\CronMonitor;
+use Crontinel\Monitors\HorizonMonitor;
+use Crontinel\Monitors\QueueMonitor;
+use Crontinel\Monitors\CronMonitor;
 use Illuminate\Console\Command;
 
 class CheckCommand extends Command
 {
-    protected $signature   = 'cron-sentinel:check {--format=table : Output format (table|json)}';
+    protected $signature   = 'crontinel:check {--format=table : Output format (table|json)}';
     protected $description = 'Check the current health of Horizon, queues, and cron jobs';
 
     public function handle(

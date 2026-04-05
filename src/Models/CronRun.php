@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace CronSentinel\Models;
+namespace Crontinel\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
 class CronRun extends Model
 {
-    protected $table = 'cron_sentinel_runs';
+    protected $table = 'crontinel_runs';
 
     protected $fillable = [
         'command',

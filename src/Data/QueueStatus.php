@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace CronSentinel\Data;
+namespace Crontinel\Data;
 
 final readonly class QueueStatus
 {

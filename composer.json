@@ -24,18 +24,18 @@
     },
     "autoload": {
         "psr-4": {
-            "CronSentinel\\": "src/"
+            "Crontinel\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "CronSentinel\\Tests\\": "tests/"
+            "Crontinel\\Tests\\": "tests/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "CronSentinel\\CronSentinelServiceProvider"
+                "Crontinel\\CrontinelServiceProvider"
             ]
         }
     },

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace CronSentinel\Monitors;
+namespace Crontinel\Monitors;
 
-use CronSentinel\Data\QueueStatus;
+use Crontinel\Data\QueueStatus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Queue\QueueManager;

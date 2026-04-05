@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace CronSentinel\Data;
+namespace Crontinel\Data;
 
 use Illuminate\Support\Carbon;
 

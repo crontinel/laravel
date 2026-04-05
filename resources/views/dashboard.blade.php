@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cron Sentinel</title>
+    <title>Crontinel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <meta http-equiv="refresh" content="30">
 </head>
@@ -13,7 +13,7 @@
 
     {{-- Header --}}
     <div class="flex items-center justify-between">
-        <h1 class="text-xl font-bold tracking-tight">Cron Sentinel</h1>
+        <h1 class="text-xl font-bold tracking-tight">Crontinel</h1>
         <span class="text-gray-500 text-xs">Last checked: {{ now()->format('H:i:s') }}</span>
     </div>
 

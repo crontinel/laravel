@@ -1056,52 +1056,35 @@ Competitors to create: `cronitor`, `better-stack`, `oh-dear`, `forge-heartbeats`
 
 ---
 
-### Milestone 6 — Polish + Launch (1 week)
-**Done when:**
-- [ ] `status.crontinel.com` (Gatus) monitors app.crontinel.com + api endpoints
-- [ ] `docs.crontinel.com` (Astro Starlight) has Installation, Configuration, and all monitor docs
-- [ ] REST API (Pro) returns correct data for `/apps` and `/apps/{slug}/status`
-- [ ] All onboarding emails send correctly
-- [ ] Mobile-responsive dashboard (usable on phone)
-- [ ] Error pages (404, 500) styled
-- [ ] Privacy Policy and Terms of Service pages exist
-- [ ] Product Hunt launch checklist complete
-- [ ] First user can complete full flow: register → install package → see data → get alerted
+### Milestone 6 — MCP Server + Polish + Launch (2 weeks)
 
----
+**Why MCP at launch:** 12,000+ MCP servers exist in 2026. MCP is the de facto standard backed by OpenAI, Google, Microsoft, and AWS. Being MCP-native at launch is a headline no Laravel monitoring competitor has. Cronitor has zero MCP support.
 
----
+**MCP vision:** Crontinel exposes an MCP server so AI coding assistants (Claude Code, Cursor, GitHub Copilot, etc.) can query cron job status, queue health, and manage alerts directly from their chat interface.
 
-## 15. V2 Roadmap — MCP Integration
-
-### Vision
-
-Crontinel exposes an **MCP (Model Context Protocol) server** so AI coding assistants (Claude Code, Cursor, GitHub Copilot, etc.) can directly interact with Laravel cron jobs and queues from within their chat interface.
-
-**Example interaction:**
+**Example:**
 > Developer in Claude Code: "Did my `send-invoices` job run last night?"
-> Claude Code → calls Crontinel MCP `get_cron_status` → returns result inline
+> Claude Code → Crontinel MCP `get_cron_status` → answer inline, no browser needed
 
-### MCP tools to expose
+**MCP tools to expose:**
 
 | Tool | Description |
 |---|---|
-| `list_scheduled_jobs` | List all monitored cron commands and their schedules |
-| `get_cron_status` | Get last run status, exit code, duration for a command |
-| `get_queue_status` | Get depth, failed count, oldest job age per queue |
-| `get_horizon_status` | Get Horizon supervisor health snapshot |
-| `list_recent_alerts` | Get fired alerts in the last N hours |
+| `list_scheduled_jobs` | List all monitored cron commands and schedules |
+| `get_cron_status` | Last run status, exit code, duration for a command |
+| `get_queue_status` | Depth, failed count, oldest job age per queue |
+| `get_horizon_status` | Horizon supervisor health snapshot |
+| `list_recent_alerts` | Fired alerts in the last N hours |
 | `create_alert` | Create a new alert threshold for a monitor |
 | `acknowledge_alert` | Dismiss an active alert |
 
-### Implementation approach
-
-1. Crontinel SaaS exposes an **MCP-compatible HTTP endpoint** at `app.crontinel.com/mcp`
-2. Authenticated via existing `api_key` (same as REST API)
-3. Users add Crontinel as an MCP server in their AI assistant config:
+**Implementation:**
+1. SaaS exposes MCP-compatible endpoint at `app.crontinel.com/mcp`
+2. Auth via existing `api_key`
+3. Publish `@crontinel/mcp-server` npm package (thin wrapper over REST API)
+4. Users add to their AI assistant config:
 
 ```json
-// Claude Code settings (mcp_servers)
 {
   "crontinel": {
     "command": "npx",
@@ -1114,16 +1097,23 @@ Crontinel exposes an **MCP (Model Context Protocol) server** so AI coding assist
 }
 ```
 
-4. Publish `@crontinel/mcp-server` as an npm package (thin wrapper over REST API)
-
-### Milestone 7 — MCP Server (V2, post-launch)
 **Done when:**
-- [ ] `@crontinel/mcp-server` npm package published
+- [ ] `status.crontinel.com` (Gatus) monitors app.crontinel.com + api endpoints
+- [ ] `docs.crontinel.com` (Astro Starlight) has Installation, Configuration, and all monitor docs
+- [ ] OpenAPI spec published at `app.crontinel.com/openapi.json`
+- [ ] REST API (Pro) returns correct data for `/apps` and `/apps/{slug}/status`
+- [ ] `@crontinel/mcp-server` npm package published and installable
 - [ ] All 7 MCP tools implemented and tested
-- [ ] Claude Code integration documented + tested end-to-end
-- [ ] MCP setup guide added to `docs.crontinel.com`
-- [ ] Listed on MCP server directories (mcp.so, etc.)
+- [ ] Claude Code MCP integration documented and tested end-to-end
+- [ ] MCP setup guide on `docs.crontinel.com`
+- [ ] Listed on MCP registries (Smithery, Glama, mcp.so)
+- [ ] All onboarding emails send correctly
+- [ ] Mobile-responsive dashboard (usable on phone)
+- [ ] Error pages (404, 500) styled
+- [ ] Privacy Policy and Terms of Service pages exist
+- [ ] Product Hunt launch checklist complete
+- [ ] First user can complete full flow: register → install package → see data → get alerted
 
 ---
 
-*End of PRD v1.1*
+*End of PRD v1.2*

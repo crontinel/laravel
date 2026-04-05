@@ -1,4 +1,7 @@
-# Cron Sentinel — CLAUDE.md
+# Crontinel — CLAUDE.md
+
+> **Source of truth:** See `AI_CONTEXT.md` for the canonical context used by all AI agents.
+> This file contains additional Claude Code-specific notes below.
 
 ## What this product is
 

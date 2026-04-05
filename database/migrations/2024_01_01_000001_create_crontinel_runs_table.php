@@ -10,7 +10,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('cron_sentinel_runs', function (Blueprint $table) {
+        Schema::create('crontinel_runs', function (Blueprint $table) {
             $table->id();
             $table->string('command');
             $table->timestamp('ran_at');
@@ -25,6 +25,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('cron_sentinel_runs');
+        Schema::dropIfExists('crontinel_runs');
     }
 };

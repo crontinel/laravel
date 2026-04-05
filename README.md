@@ -16,7 +16,7 @@ Laravel-native Cron & Queue monitoring. Horizon internals, queue depth, dead-let
 
 ```bash
 composer require harunrrayhan/crontinel
-php artisan cron-sentinel:install
+php artisan crontinel:install
 ```
 
 Visit `/cron-sentinel` in your browser.
@@ -24,13 +24,13 @@ Visit `/cron-sentinel` in your browser.
 ## CLI check
 
 ```bash
-php artisan cron-sentinel:check
-php artisan cron-sentinel:check --format=json
+php artisan crontinel:check
+php artisan crontinel:check --format=json
 ```
 
 ## Configuration
 
-After install, edit `config/cron-sentinel.php`:
+After install, edit `config/crontinel.php`:
 
 ```php
 'horizon' => [

@@ -107,8 +107,8 @@ Crontinel hooks into Laravel's internals:
 | Queue monitoring | Depth per queue, failed count, oldest job age |
 | Cron tracking | Records every scheduled command run, exit code, duration |
 | Blade dashboard | Dark UI at `/cron-sentinel`, auto-refreshes every 30s |
-| CLI check | `php artisan cron-sentinel:check` (table + JSON output) |
-| Install command | `php artisan cron-sentinel:install` |
+| CLI check | `php artisan crontinel:check` (table + JSON output) |
+| Install command | `php artisan crontinel:install` |
 | Alerts | Slack webhook, email (configurable in config file) |
 | Config | Publish config with thresholds, channels, toggles |
 | History | Unlimited (stored in user's own DB) |
@@ -359,7 +359,7 @@ sent_at             timestamp nullable
 created_at          timestamp
 ```
 
-### 6.10 cron_sentinel_runs (OSS package + SaaS)
+### 6.10 crontinel_runs (OSS package + SaaS)
 
 ```sql
 id                  bigint PK
@@ -577,7 +577,7 @@ Paginated cron run history.
 6. Step 2: Create first app — enter app name, select timezone
 7. Step 3: Install — shown:
      composer require harunrrayhan/crontinel
-     php artisan cron-sentinel:install --saas-key={api_key}
+     php artisan crontinel:install --saas-key={api_key}
 8. Dashboard loads, shows "Waiting for first ping..."
 9. When first ping arrives, dashboard updates live (Livewire polling)
 10. 14-day Pro trial starts automatically at registration
@@ -587,9 +587,9 @@ Paginated cron run history.
 
 ```
 1. composer require harunrrayhan/crontinel
-2. php artisan cron-sentinel:install
-   - Publishes config/cron-sentinel.php
-   - Runs migrations (creates cron_sentinel_runs table)
+2. php artisan crontinel:install
+   - Publishes config/crontinel.php
+   - Runs migrations (creates crontinel_runs table)
    - Prints dashboard URL
 3. Add CRON_SENTINEL_PATH=cron-sentinel to .env (optional)
 4. Visit /cron-sentinel
@@ -851,7 +851,7 @@ UI shows upgrade prompts when limit reached — never hard errors without explan
 - **Laravel auto-discovery:** Yes (`CronSentinelServiceProvider`)
 - **Min requirements:** PHP 8.2+, Laravel 11+
 
-### 12.2 Configuration (`config/cron-sentinel.php`)
+### 12.2 Configuration (`config/crontinel.php`)
 
 All values have sane defaults. Zero required config for local use.
 
@@ -879,9 +879,9 @@ All values have sane defaults. Zero required config for local use.
 
 | Command | Description |
 |---|---|
-| `cron-sentinel:install` | Publish config, run migrations, print dashboard URL |
-| `cron-sentinel:check` | Print health table to console (exit 1 if any alerts) |
-| `cron-sentinel:check --format=json` | JSON output (for CI/CD integration) |
+| `crontinel:install` | Publish config, run migrations, print dashboard URL |
+| `crontinel:check` | Print health table to console (exit 1 if any alerts) |
+| `crontinel:check --format=json` | JSON output (for CI/CD integration) |
 
 ### 12.4 Scheduler integration
 
@@ -983,13 +983,13 @@ Competitors to create: `cronitor`, `better-stack`, `oh-dear`, `forge-heartbeats`
 ### Milestone 1 — OSS Package MVP (2–3 weeks)
 **Done when:**
 - [ ] `composer require harunrrayhan/crontinel` installs cleanly on fresh Laravel 11 + 12
-- [ ] `php artisan cron-sentinel:install` publishes config + runs migrations
+- [ ] `php artisan crontinel:install` publishes config + runs migrations
 - [ ] Dashboard at `/cron-sentinel` loads in browser with dark theme
 - [ ] HorizonMonitor returns correct status when Horizon is running
 - [ ] HorizonMonitor returns `running=false` when Horizon is stopped
 - [ ] QueueMonitor returns correct depth for database driver queues
 - [ ] CronMonitor records runs after scheduler executes
-- [ ] `php artisan cron-sentinel:check` exits 0 when healthy, 1 when alerts
+- [ ] `php artisan crontinel:check` exits 0 when healthy, 1 when alerts
 - [ ] Slack alert fires when queue depth exceeds threshold
 - [ ] Email alert fires when cron job exits with non-zero code
 - [ ] All Pest unit tests pass
@@ -1016,7 +1016,7 @@ Competitors to create: `cronitor`, `better-stack`, `oh-dear`, `forge-heartbeats`
 ### Milestone 3 — SaaS Agent Integration (1 week)
 **Done when:**
 - [ ] `POST /api/v1/ingest/ping` accepts valid payload and stores monitor_events
-- [ ] `POST /api/v1/ingest/cron` creates cron_sentinel_runs record
+- [ ] `POST /api/v1/ingest/cron` creates crontinel_runs record
 - [ ] `POST /api/v1/ingest/event` creates monitor_event with correct severity
 - [ ] Invalid API key returns 401
 - [ ] Rate limit: max 120 requests/minute per api_key (returns 429 if exceeded)

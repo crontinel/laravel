@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace CronSentinel\Http\Controllers;
+namespace Crontinel\Http\Controllers;
 
-use CronSentinel\Monitors\HorizonMonitor;
-use CronSentinel\Monitors\QueueMonitor;
-use CronSentinel\Monitors\CronMonitor;
+use Crontinel\Monitors\HorizonMonitor;
+use Crontinel\Monitors\QueueMonitor;
+use Crontinel\Monitors\CronMonitor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\View\View;

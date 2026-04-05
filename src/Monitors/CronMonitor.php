@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace CronSentinel\Monitors;
+namespace Crontinel\Monitors;
 
-use CronSentinel\Data\CronStatus;
-use CronSentinel\Models\CronRun;
+use Crontinel\Data\CronStatus;
+use Crontinel\Models\CronRun;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Carbon;
 

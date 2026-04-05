@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace CronSentinel\Monitors;
+namespace Crontinel\Monitors;
 
-use CronSentinel\Data\HorizonStatus;
+use Crontinel\Data\HorizonStatus;
 use Illuminate\Support\Facades\Redis;
 
 class HorizonMonitor

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use CronSentinel\Data\HorizonStatus;
+use Crontinel\Data\HorizonStatus;
 
 it('is healthy when running with no failed jobs', function () {
     $status = new HorizonStatus(

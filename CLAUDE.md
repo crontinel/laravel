@@ -35,7 +35,7 @@ cron-sentinel/
 ├── resources/     # Livewire views
 ├── routes/        # Web routes for dashboard
 ├── tests/         # Pest tests
-├── config/        # cron-sentinel.php config file
+├── config/        # crontinel.php config file
 └── workbench/     # Local test app for dev (Laravel Workbench)
 ```
 
@@ -44,14 +44,14 @@ cron-sentinel/
 - Use strict types
 - No unnecessary abstractions — solve the actual problem first
 - Write Pest tests for core monitoring logic
-- Keep the package installable in 2 commands: `composer require` + `php artisan cron-sentinel:install`
+- Keep the package installable in 2 commands: `composer require` + `php artisan crontinel:install`
 
 ## Key files to know
 - `src/CronSentinelServiceProvider.php` — package entry point
 - `src/Monitors/HorizonMonitor.php` — Horizon health checks
 - `src/Monitors/QueueMonitor.php` — queue depth + failed jobs
 - `src/Monitors/CronMonitor.php` — scheduled command tracking
-- `config/cron-sentinel.php` — user-facing config
+- `config/crontinel.php` — user-facing config
 
 ## Research context
 Full research in: /Users/ray/.openclaw/workspace/projects/product-opportunity/research/

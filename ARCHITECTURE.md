@@ -193,6 +193,6 @@ This means the OSS package serves double duty: standalone self-hosted dashboard 
 
 ## Still open (non-blocking)
 
-- [ ] GitHub OAuth — confirm yes/no before auth build starts
+- [x] GitHub OAuth — confirmed YES (Laravel Socialite)
 - [ ] Email provider for >3K/mo (Resend paid vs Postmark vs SES)
 - [ ] ploy.cloud CF Pages memory fix — needs CF account access

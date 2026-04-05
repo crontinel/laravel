@@ -1,4 +1,4 @@
-# Cron Sentinel
+# Cron Sentinel — [crontinel.com](https://crontinel.com)
 
 Laravel-native Cron & Queue monitoring. Horizon internals, queue depth, dead-letter alerts, and cron health — in one dashboard.
 

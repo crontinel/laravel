@@ -1,9 +1,12 @@
 # Crontinel
 
 [![Latest Version](https://img.shields.io/packagist/v/harunrrayhan/crontinel.svg)](https://packagist.org/packages/harunrrayhan/crontinel)
+[![CI](https://github.com/HarunRRayhan/crontinel/actions/workflows/ci.yml/badge.svg)](https://github.com/HarunRRayhan/crontinel/actions/workflows/ci.yml)
+[![PHP](https://img.shields.io/badge/PHP-8.2%20%7C%208.3%20%7C%208.4-blue)](https://packagist.org/packages/harunrrayhan/crontinel)
+[![Laravel](https://img.shields.io/badge/Laravel-11%20%7C%2012%20%7C%2013-red)](https://packagist.org/packages/harunrrayhan/crontinel)
 [![License](https://img.shields.io/github/license/HarunRRayhan/crontinel.svg)](LICENSE)
 
-**Laravel-native Cron & Queue monitoring.** Monitors Horizon internals, queue depth, and cron health — things generic monitors can't see.
+**Background job and cron monitoring for Laravel.** Monitors Horizon internals, queue depth, and cron health — things generic monitors can't see.
 
 > Cronitor tells you a job ran. Crontinel tells you your Horizon supervisor is paused.
 
@@ -13,7 +16,7 @@
 
 | Monitor | What it sees |
 |---|---|
-| **Horizon** | Supervisor status (per supervisor, not just "Horizon is running"), paused state, failed jobs per minute |
+| **Horizon** | Supervisor status per supervisor (not just "Horizon is running"), paused state, failed jobs per minute |
 | **Queues** | Depth per queue, failed count, oldest job age — Redis and database drivers |
 | **Cron jobs** | Every scheduled command run: exit code, duration, late detection |
 
@@ -21,8 +24,8 @@
 
 ## Requirements
 
-- PHP 8.2+
-- Laravel 11 or 12
+- PHP 8.2, 8.3, or 8.4
+- Laravel 11, 12, or 13
 
 ---
 
@@ -70,7 +73,7 @@ return [
     // Dashboard middleware
     'middleware' => ['web', 'auth'],
 
-    // Connect to Crontinel SaaS for multi-app hosted dashboards
+    // Connect to Crontinel SaaS for multi-app hosted dashboards (optional)
     'saas_key' => env('CRONTINEL_API_KEY'),
     'saas_url' => env('CRONTINEL_API_URL', 'https://app.crontinel.com'),
 
@@ -136,25 +139,15 @@ Alerts **auto-resolve** and send a "resolved" notification when the issue clears
 
 ---
 
-## Connecting to Crontinel SaaS
+## Not using Horizon?
 
-The OSS package works standalone. To get multi-app hosted dashboards, longer history, and team access:
-
-1. Sign up at [app.crontinel.com](https://app.crontinel.com)
-2. Create an app and copy the API key
-3. Add to your `.env`:
-
-```env
-CRONTINEL_API_KEY=your-api-key
-```
-
-The package will automatically report health data to the SaaS dashboard.
+Set `horizon.enabled = false` in config. Queue and cron monitoring work independently of Horizon.
 
 ---
 
-## Not using Horizon?
+## Connecting to Crontinel SaaS
 
-Set `horizon.enabled = false` in config. Queue and cron monitoring work independently.
+The OSS package works standalone. To get multi-app hosted dashboards, longer history, and team access, visit [crontinel.com](https://crontinel.com) to join the early access list.
 
 ---
 
@@ -162,4 +155,4 @@ Set `horizon.enabled = false` in config. Queue and cron monitoring work independ
 
 MIT — free forever. See [LICENSE](LICENSE).
 
-Built by [Harun Ray](https://github.com/HarunRRayhan) · [crontinel.com](https://crontinel.com)
+Built by [Harun R Rayhan](https://github.com/HarunRRayhan) · [crontinel.com](https://crontinel.com)

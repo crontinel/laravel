@@ -110,7 +110,7 @@ Crontinel hooks into Laravel's internals:
 | Horizon monitoring | Supervisor status, paused detection, failed jobs/min |
 | Queue monitoring | Depth per queue, failed count, oldest job age |
 | Cron tracking | Records every scheduled command run, exit code, duration |
-| Blade dashboard | Dark UI at `/cron-sentinel`, auto-refreshes every 30s |
+| Blade dashboard | Dark UI at `/crontinel`, auto-refreshes every 30s |
 | CLI check | `php artisan crontinel:check` (table + JSON output) |
 | Install command | `php artisan crontinel:install` |
 | Alerts | Slack webhook, email (configurable in config file) |
@@ -988,7 +988,7 @@ Competitors to create: `cronitor`, `better-stack`, `oh-dear`, `forge-heartbeats`
 **Done when:**
 - [ ] `composer require harunrrayhan/crontinel` installs cleanly on fresh Laravel 11 + 12
 - [ ] `php artisan crontinel:install` publishes config + runs migrations
-- [ ] Dashboard at `/cron-sentinel` loads in browser with dark theme
+- [ ] Dashboard at `/crontinel` loads in browser with dark theme
 - [ ] HorizonMonitor returns correct status when Horizon is running
 - [ ] HorizonMonitor returns `running=false` when Horizon is stopped
 - [ ] QueueMonitor returns correct depth for database driver queues

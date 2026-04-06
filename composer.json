@@ -1,6 +1,6 @@
 {
     "name": "harunrrayhan/crontinel",
-    "description": "Laravel-native Cron & Queue monitoring — Horizon internals, queue depth, dead-letter alerts, and cron health in one dashboard.",
+    "description": "Background job and cron monitoring for Laravel. Monitors Horizon internals, queue depth, and cron health.",
     "type": "library",
     "license": "MIT",
     "keywords": ["laravel", "queue", "horizon", "cron", "monitoring", "crontinel"],

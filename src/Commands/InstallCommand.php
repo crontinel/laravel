@@ -8,7 +8,8 @@ use Illuminate\Console\Command;
 
 class InstallCommand extends Command
 {
-    protected $signature   = 'crontinel:install';
+    protected $signature = 'crontinel:install';
+
     protected $description = 'Install Crontinel: publish config and run migrations';
 
     public function handle(): int

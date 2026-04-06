@@ -49,10 +49,10 @@ class HorizonMonitor
             foreach ($keys as $key) {
                 $data = Redis::connection('horizon')->hmget($key, ['name', 'status', 'processes', 'queue']);
                 $supervisors[] = [
-                    'name'      => $data[0] ?? $key,
-                    'status'    => $data[1] ?? 'unknown',
+                    'name' => $data[0] ?? $key,
+                    'status' => $data[1] ?? 'unknown',
                     'processes' => (int) ($data[2] ?? 0),
-                    'queue'     => $data[3] ?? 'default',
+                    'queue' => $data[3] ?? 'default',
                 ];
             }
 

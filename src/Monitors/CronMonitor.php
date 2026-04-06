@@ -26,16 +26,16 @@ class CronMonitor
 
     public function statusFor(mixed $event): CronStatus
     {
-        $command    = $event->command ?? $event->description ?? 'unknown';
+        $command = $event->command ?? $event->description ?? 'unknown';
         $expression = $event->expression;
-        $lastRun    = CronRun::latestFor($command);
-        $nextDue    = $this->nextDue($event);
+        $lastRun = CronRun::latestFor($command);
+        $nextDue = $this->nextDue($event);
 
         $status = match (true) {
-            $lastRun === null                       => 'never_run',
-            $lastRun->exit_code !== 0               => 'failed',
-            $this->isLate($lastRun, $nextDue)       => 'late',
-            default                                 => 'ok',
+            $lastRun === null => 'never_run',
+            $lastRun->exit_code !== 0 => 'failed',
+            $this->isLate($lastRun, $nextDue) => 'late',
+            default => 'ok',
         };
 
         return new CronStatus(

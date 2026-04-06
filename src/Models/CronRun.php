@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Crontinel\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 
 class CronRun extends Model
 {
@@ -20,8 +19,8 @@ class CronRun extends Model
     ];
 
     protected $casts = [
-        'ran_at'      => 'datetime',
-        'exit_code'   => 'integer',
+        'ran_at' => 'datetime',
+        'exit_code' => 'integer',
         'duration_ms' => 'integer',
     ];
 
@@ -35,11 +34,11 @@ class CronRun extends Model
     public static function record(string $command, int $exitCode, int $durationMs, ?string $output = null): static
     {
         return static::create([
-            'command'     => $command,
-            'ran_at'      => now(),
-            'exit_code'   => $exitCode,
+            'command' => $command,
+            'ran_at' => now(),
+            'exit_code' => $exitCode,
             'duration_ms' => $durationMs,
-            'output'      => $output,
+            'output' => $output,
         ]);
     }
 }

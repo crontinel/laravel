@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
+use Crontinel\Data\CronStatus;
+use Crontinel\Data\HorizonStatus;
+use Crontinel\Data\QueueStatus;
 use Crontinel\Monitors\CronMonitor;
 use Crontinel\Monitors\HorizonMonitor;
 use Crontinel\Monitors\QueueMonitor;
-use Crontinel\Data\HorizonStatus;
-use Crontinel\Data\QueueStatus;
-use Crontinel\Data\CronStatus;
 use Crontinel\Services\AlertService;
 
 beforeEach(function () {
@@ -16,9 +16,9 @@ beforeEach(function () {
 
     // Bind mocks
     $this->horizonMock = Mockery::mock(HorizonMonitor::class);
-    $this->queueMock   = Mockery::mock(QueueMonitor::class);
-    $this->cronMock    = Mockery::mock(CronMonitor::class);
-    $this->alertMock   = Mockery::mock(AlertService::class);
+    $this->queueMock = Mockery::mock(QueueMonitor::class);
+    $this->cronMock = Mockery::mock(CronMonitor::class);
+    $this->alertMock = Mockery::mock(AlertService::class);
 
     app()->instance(HorizonMonitor::class, $this->horizonMock);
     app()->instance(QueueMonitor::class, $this->queueMock);

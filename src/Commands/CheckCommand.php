@@ -12,7 +12,8 @@ use Illuminate\Console\Command;
 
 class CheckCommand extends Command
 {
-    protected $signature   = 'crontinel:check {--format=table : Output format (table|json)} {--no-alerts : Skip firing alerts}';
+    protected $signature = 'crontinel:check {--format=table : Output format (table|json)} {--no-alerts : Skip firing alerts}';
+
     protected $description = 'Check the current health of Horizon, queues, and cron jobs';
 
     public function handle(
@@ -23,7 +24,7 @@ class CheckCommand extends Command
     ): int {
         $horizonStatus = config('crontinel.horizon.enabled') ? $horizon->status() : null;
         $queueStatuses = config('crontinel.queues.enabled') ? $queue->all() : [];
-        $cronStatuses  = config('crontinel.cron.enabled') ? $cron->all() : [];
+        $cronStatuses = config('crontinel.cron.enabled') ? $cron->all() : [];
 
         // Fire alerts unless suppressed
         if (! $this->option('no-alerts')) {
@@ -43,8 +44,8 @@ class CheckCommand extends Command
         if ($this->option('format') === 'json') {
             $this->line(json_encode([
                 'horizon' => $horizonStatus,
-                'queues'  => $queueStatuses,
-                'crons'   => $cronStatuses,
+                'queues' => $queueStatuses,
+                'crons' => $cronStatuses,
             ], JSON_PRETTY_PRINT));
 
             return $this->hasAlerts($horizonStatus, $queueStatuses, $cronStatuses)
@@ -93,11 +94,11 @@ class CheckCommand extends Command
                     $s->lastRunAt?->diffForHumans() ?? 'never',
                     $s->lastDurationMs ? $s->lastDurationMs.'ms' : '-',
                     match ($s->status) {
-                        'ok'        => '<fg=green>✓ ok</>',
-                        'failed'    => '<fg=red>✗ failed</>',
-                        'late'      => '<fg=yellow>⚠ late</>',
+                        'ok' => '<fg=green>✓ ok</>',
+                        'failed' => '<fg=red>✗ failed</>',
+                        'late' => '<fg=yellow>⚠ late</>',
                         'never_run' => '<fg=gray>– never run</>',
-                        default     => $s->status,
+                        default => $s->status,
                     },
                 ])->all()
             );

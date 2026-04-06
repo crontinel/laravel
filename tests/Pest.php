@@ -1,5 +1,6 @@
 <?php
 
 declare(strict_types=1);
+use Crontinel\Tests\TestCase;
 
-uses(Crontinel\Tests\TestCase::class)->in('Feature', 'Unit');
+uses(TestCase::class)->in('Feature', 'Unit');

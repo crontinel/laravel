@@ -19,6 +19,8 @@ jobs:
         exclude:
           - php: '8.4'
             laravel: '11.*'
+          - php: '8.2'
+            laravel: '13.*'
         include:
           - laravel: '11.*'
             testbench: '9.*'

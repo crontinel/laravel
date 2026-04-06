@@ -18,7 +18,7 @@ class QueueMonitor
      */
     public function all(): array
     {
-        $watchList  = config('crontinel.queues.watch', []);
+        $watchList = config('crontinel.queues.watch', []);
         $connection = config('queue.default', 'sync');
 
         return collect($this->resolveQueues($connection, $watchList))
@@ -45,8 +45,8 @@ class QueueMonitor
         try {
             return match ($driver) {
                 'database' => DB::table('jobs')->where('queue', $queue)->count(),
-                'redis'    => $this->getRedisDepth($connection, $queue),
-                default    => 0,
+                'redis' => $this->getRedisDepth($connection, $queue),
+                default => 0,
             };
         } catch (\Throwable) {
             return 0;
@@ -81,8 +81,8 @@ class QueueMonitor
         try {
             return match ($driver) {
                 'database' => $this->getDatabaseOldestJobAge($queue),
-                'redis'    => $this->getRedisOldestJobAge($connection, $queue),
-                default    => null,
+                'redis' => $this->getRedisOldestJobAge($connection, $queue),
+                default => null,
             };
         } catch (\Throwable) {
             return null;
@@ -103,13 +103,13 @@ class QueueMonitor
     {
         try {
             $redisConnection = config("queue.connections.{$connection}.connection", 'default');
-            $raw             = Redis::connection($redisConnection)->lindex("queues:{$queue}", -1);
+            $raw = Redis::connection($redisConnection)->lindex("queues:{$queue}", -1);
 
             if (! $raw) {
                 return null;
             }
 
-            $payload  = json_decode($raw, true);
+            $payload = json_decode($raw, true);
             $pushedAt = $payload['pushedAt'] ?? null;
 
             return $pushedAt ? (int) (time() - (int) $pushedAt) : null;
@@ -129,12 +129,13 @@ class QueueMonitor
         try {
             if ($driver === 'database') {
                 $queues = DB::table('jobs')->distinct()->pluck('queue')->all();
+
                 return ! empty($queues) ? $queues : ['default'];
             }
 
             if ($driver === 'redis') {
                 $redisConnection = config("queue.connections.{$connection}.connection", 'default');
-                $keys            = Redis::connection($redisConnection)->keys('queues:*');
+                $keys = Redis::connection($redisConnection)->keys('queues:*');
 
                 $queues = collect($keys)
                     ->map(fn ($key) => preg_replace('/^queues:(.+?)(:delayed|:reserved)?$/', '$1', $key))
@@ -145,7 +146,8 @@ class QueueMonitor
 
                 return ! empty($queues) ? $queues : ['default'];
             }
-        } catch (\Throwable) {}
+        } catch (\Throwable) {
+        }
 
         return ['default'];
     }

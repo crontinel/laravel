@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Crontinel\Http\Controllers;
 
+use Crontinel\Monitors\CronMonitor;
 use Crontinel\Monitors\HorizonMonitor;
 use Crontinel\Monitors\QueueMonitor;
-use Crontinel\Monitors\CronMonitor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\View\View;
@@ -23,8 +23,8 @@ class DashboardController extends Controller
     {
         return view('crontinel::dashboard', [
             'horizon' => config('crontinel.horizon.enabled') ? $this->horizon->status() : null,
-            'queues'  => config('crontinel.queues.enabled') ? $this->queue->all() : [],
-            'crons'   => config('crontinel.cron.enabled') ? $this->cron->all() : [],
+            'queues' => config('crontinel.queues.enabled') ? $this->queue->all() : [],
+            'crons' => config('crontinel.cron.enabled') ? $this->cron->all() : [],
         ]);
     }
 
@@ -32,8 +32,8 @@ class DashboardController extends Controller
     {
         return response()->json([
             'horizon' => config('crontinel.horizon.enabled') ? $this->horizon->status() : null,
-            'queues'  => config('crontinel.queues.enabled') ? $this->queue->all() : [],
-            'crons'   => config('crontinel.cron.enabled') ? $this->cron->all() : [],
+            'queues' => config('crontinel.queues.enabled') ? $this->queue->all() : [],
+            'crons' => config('crontinel.cron.enabled') ? $this->cron->all() : [],
             'checked_at' => now()->toIso8601String(),
         ]);
     }

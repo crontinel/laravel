@@ -77,7 +77,7 @@ class AlertService
 
         match ($channel) {
             'slack' => $this->sendSlack($title, $message, $level),
-            'mail'  => $this->sendMail($title, $message, $level),
+            'mail' => $this->sendMail($title, $message, $level),
             default => null,
         };
     }
@@ -101,7 +101,7 @@ class AlertService
                 message: "Issue resolved. Originally fired at {$original['fired_at']}.",
                 level: 'resolved',
             ),
-            'mail'  => $this->sendMail(
+            'mail' => $this->sendMail(
                 title: "✅ Resolved: {$original['title']}",
                 message: "Issue resolved. Originally fired at {$original['fired_at']}.",
                 level: 'resolved',
@@ -116,14 +116,15 @@ class AlertService
 
         if (! $webhookUrl) {
             Log::warning('Crontinel: Slack alert channel configured but no webhook URL set.');
+
             return;
         }
 
         $emoji = match ($level) {
             'critical' => '🔴',
-            'warning'  => '⚠️',
+            'warning' => '⚠️',
             'resolved' => '✅',
-            default    => 'ℹ️',
+            default => 'ℹ️',
         };
 
         try {
@@ -141,6 +142,7 @@ class AlertService
 
         if (! $to) {
             Log::warning('Crontinel: Mail alert channel configured but no recipient set.');
+
             return;
         }
 
@@ -184,9 +186,9 @@ class AlertService
 
     private function buildQueueMessage(QueueStatus $status): string
     {
-        $lines   = [];
+        $lines = [];
         $depthTh = config('crontinel.queues.depth_alert_threshold', 1000);
-        $waitTh  = config('crontinel.queues.wait_time_alert_seconds', 300);
+        $waitTh = config('crontinel.queues.wait_time_alert_seconds', 300);
 
         if ($status->depth > $depthTh) {
             $lines[] = "• Queue depth: {$status->depth} jobs (threshold: {$depthTh})";
@@ -206,10 +208,10 @@ class AlertService
     private function buildCronMessage(CronStatus $status): string
     {
         return match ($status->status) {
-            'failed'   => "Command [{$status->command}] exited with code {$status->lastExitCode}.",
-            'late'     => "Command [{$status->command}] has not run on schedule (expression: {$status->expression}).",
+            'failed' => "Command [{$status->command}] exited with code {$status->lastExitCode}.",
+            'late' => "Command [{$status->command}] has not run on schedule (expression: {$status->expression}).",
             'never_run' => "Command [{$status->command}] has never run.",
-            default    => "Command [{$status->command}] is unhealthy.",
+            default => "Command [{$status->command}] is unhealthy.",
         };
     }
 }

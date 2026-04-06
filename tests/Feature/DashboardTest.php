@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
+use Crontinel\Data\HorizonStatus;
 use Crontinel\Monitors\CronMonitor;
 use Crontinel\Monitors\HorizonMonitor;
 use Crontinel\Monitors\QueueMonitor;
-use Crontinel\Data\HorizonStatus;
 
 beforeEach(function () {
     $this->loadMigrationsFrom(__DIR__.'/../../database/migrations');

@@ -16,7 +16,7 @@ final readonly class QueueStatus
 
     public function isHealthy(): bool
     {
-        $depthThreshold    = config('crontinel.queues.depth_alert_threshold', 1000);
+        $depthThreshold = config('crontinel.queues.depth_alert_threshold', 1000);
         $waitTimeThreshold = config('crontinel.queues.wait_time_alert_seconds', 300);
 
         if ($this->depth > $depthThreshold) {

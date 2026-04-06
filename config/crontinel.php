@@ -34,10 +34,10 @@ return [
     | Set to false if you are not using Laravel Horizon.
     */
     'horizon' => [
-        'enabled'                          => env('CRONTINEL_HORIZON', true),
-        'supervisor_alert_after_seconds'   => 60,
+        'enabled' => env('CRONTINEL_HORIZON', true),
+        'supervisor_alert_after_seconds' => 60,
         'failed_jobs_per_minute_threshold' => 5,
-        'connection'                       => env('CRONTINEL_HORIZON_CONNECTION', 'horizon'),
+        'connection' => env('CRONTINEL_HORIZON_CONNECTION', 'horizon'),
     ],
 
     /*
@@ -46,8 +46,8 @@ return [
     |--------------------------------------------------------------------------
     */
     'queues' => [
-        'enabled'               => true,
-        'watch'                 => [],
+        'enabled' => true,
+        'watch' => [],
         'depth_alert_threshold' => 1000,
         'wait_time_alert_seconds' => 300,
     ],
@@ -58,9 +58,9 @@ return [
     |--------------------------------------------------------------------------
     */
     'cron' => [
-        'enabled'                  => true,
+        'enabled' => true,
         'late_alert_after_seconds' => 120,
-        'retain_days'              => 30,
+        'retain_days' => 30,
     ],
 
     /*

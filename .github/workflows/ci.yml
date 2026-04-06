@@ -24,10 +24,15 @@ jobs:
         include:
           - laravel: '11.*'
             testbench: '9.*'
+            experimental: false
           - laravel: '12.*'
             testbench: '10.*'
+            experimental: false
           - laravel: '13.*'
             testbench: '11.*'
+            experimental: true
+
+    continue-on-error: ${{ matrix.experimental == true }}
 
     steps:
       - uses: actions/checkout@v4

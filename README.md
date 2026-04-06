@@ -2,6 +2,7 @@
 
 [![Latest Version](https://img.shields.io/packagist/v/harunrrayhan/crontinel.svg)](https://packagist.org/packages/harunrrayhan/crontinel)
 [![CI](https://github.com/HarunRRayhan/crontinel/actions/workflows/ci.yml/badge.svg)](https://github.com/HarunRRayhan/crontinel/actions/workflows/ci.yml)
+[![Total Downloads](https://img.shields.io/packagist/dt/harunrrayhan/crontinel.svg)](https://packagist.org/packages/harunrrayhan/crontinel)
 [![PHP](https://img.shields.io/badge/PHP-8.2%20%7C%208.3%20%7C%208.4-blue)](https://packagist.org/packages/harunrrayhan/crontinel)
 [![Laravel](https://img.shields.io/badge/Laravel-11%20%7C%2012%20%7C%2013-red)](https://packagist.org/packages/harunrrayhan/crontinel)
 [![License](https://img.shields.io/github/license/HarunRRayhan/crontinel.svg)](LICENSE)

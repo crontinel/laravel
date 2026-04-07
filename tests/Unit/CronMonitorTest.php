@@ -5,7 +5,6 @@ declare(strict_types=1);
 use Crontinel\Data\CronStatus;
 use Illuminate\Support\Carbon;
 
-uses(Crontinel\Tests\TestCase::class);
 
 // ─── CronStatus::isHealthy ────────────────────────────────────────────────
 

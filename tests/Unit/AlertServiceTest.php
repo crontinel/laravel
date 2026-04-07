@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 
-uses(Crontinel\Tests\TestCase::class);
 
 beforeEach(function () {
     Cache::flush();
@@ -156,7 +155,7 @@ it('fires slack when cron failed', function () {
 
     Http::assertSent(fn ($req) =>
         str_contains($req->body(), 'send:invoices') &&
-        str_contains($req->body(), 'exit code')
+        str_contains($req->body(), 'exited with code')
     );
 });
 
@@ -213,5 +212,5 @@ it('sends mail when channel is mail', function () {
 
     app(AlertService::class)->evaluateHorizon($status);
 
-    Mail::assertSent(\Illuminate\Mail\Mailable::class);
+    Mail::assertSent(\Crontinel\Mail\AlertMail::class);
 });

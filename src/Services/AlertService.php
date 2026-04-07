@@ -7,6 +7,7 @@ namespace Crontinel\Services;
 use Crontinel\Data\CronStatus;
 use Crontinel\Data\HorizonStatus;
 use Crontinel\Data\QueueStatus;
+use Crontinel\Mail\AlertMail;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -147,12 +148,7 @@ class AlertService
         }
 
         try {
-            Mail::raw(
-                text: "{$title}\n\n{$message}\n\nSent by Crontinel.",
-                callback: function ($mail) use ($to, $title) {
-                    $mail->to($to)->subject("[Crontinel] {$title}");
-                }
-            );
+            Mail::to($to)->send(new AlertMail($title, $message));
         } catch (\Throwable $e) {
             Log::error('Crontinel: Failed to send email alert.', ['error' => $e->getMessage()]);
         }

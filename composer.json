@@ -46,6 +46,12 @@
             "pestphp/pest": true
         }
     },
+    "scripts": {
+        "test": "vendor/bin/pest",
+        "test:coverage": "vendor/bin/pest --coverage",
+        "lint": "vendor/bin/pint",
+        "lint:check": "vendor/bin/pint --test"
+    },
     "minimum-stability": "dev",
     "prefer-stable": true
 }

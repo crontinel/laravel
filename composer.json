@@ -4,12 +4,19 @@
     "type": "library",
     "license": "MIT",
     "keywords": ["laravel", "queue", "horizon", "cron", "monitoring", "crontinel"],
+    "homepage": "https://crontinel.com",
     "authors": [
         {
             "name": "Harun R Rayhan",
-            "email": "me@harunray.com"
+            "email": "me@harunray.com",
+            "homepage": "https://github.com/HarunRRayhan",
+            "role": "Developer"
         }
     ],
+    "support": {
+        "issues": "https://github.com/crontinel/crontinel/issues",
+        "source": "https://github.com/crontinel/crontinel"
+    },
     "require": {
         "php": "^8.2|^8.3|^8.4",
         "crontinel/php": "@dev",
@@ -62,6 +69,6 @@
             }
         }
     ],
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "prefer-stable": true
 }

@@ -79,6 +79,7 @@ class AlertService
         match ($channel) {
             'slack' => $this->sendSlack($title, $message, $level),
             'mail' => $this->sendMail($title, $message, $level),
+            'webhook' => $this->sendWebhook($title, $message, $level, false),
             default => null,
         };
     }
@@ -106,6 +107,12 @@ class AlertService
                 title: "✅ Resolved: {$original['title']}",
                 message: "Issue resolved. Originally fired at {$original['fired_at']}.",
                 level: 'resolved',
+            ),
+            'webhook' => $this->sendWebhook(
+                title: $original['title'],
+                message: "Issue resolved. Originally fired at {$original['fired_at']}.",
+                level: 'resolved',
+                resolved: true,
             ),
             default => null,
         };
@@ -151,6 +158,34 @@ class AlertService
             Mail::to($to)->send(new AlertMail($title, $message));
         } catch (\Throwable $e) {
             Log::error('Crontinel: Failed to send email alert.', ['error' => $e->getMessage()]);
+        }
+    }
+
+    private function sendWebhook(string $title, string $message, string $level, bool $resolved): void
+    {
+        $url = config('crontinel.alerts.webhook.url');
+
+        if (! $url) {
+            Log::warning('Crontinel: Webhook alert channel configured but no URL set.');
+
+            return;
+        }
+
+        $headers = config('crontinel.alerts.webhook.headers', []);
+
+        try {
+            Http::withHeaders($headers)
+                ->timeout(10)
+                ->post($url, [
+                    'title' => $title,
+                    'message' => $message,
+                    'level' => $level,
+                    'resolved' => $resolved,
+                    'fired_at' => now()->toIso8601String(),
+                    'source' => 'crontinel',
+                ]);
+        } catch (\Throwable $e) {
+            Log::error('Crontinel: Failed to send webhook alert.', ['error' => $e->getMessage()]);
         }
     }
 

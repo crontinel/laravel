@@ -6,9 +6,12 @@ namespace Crontinel;
 
 use Crontinel\Commands\CheckCommand;
 use Crontinel\Commands\InstallCommand;
+use Crontinel\Commands\PruneCommand;
+use Crontinel\Commands\ReportCommand;
 use Crontinel\Listeners\RecordScheduledTaskRun;
 use Illuminate\Console\Events\ScheduledTaskFailed;
 use Illuminate\Console\Events\ScheduledTaskFinished;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
@@ -26,11 +29,14 @@ class CrontinelServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'crontinel');
 
         $this->registerEventListeners();
+        $this->registerSchedule();
 
         if ($this->app->runningInConsole()) {
             $this->commands([
                 InstallCommand::class,
                 CheckCommand::class,
+                ReportCommand::class,
+                PruneCommand::class,
             ]);
 
             $this->publishes([
@@ -57,5 +63,20 @@ class CrontinelServiceProvider extends ServiceProvider
 
         Event::listen(ScheduledTaskFinished::class, [$listener, 'handleFinished']);
         Event::listen(ScheduledTaskFailed::class, [$listener, 'handleFailed']);
+    }
+
+    private function registerSchedule(): void
+    {
+        // Only register the reporter schedule when an API key is configured
+        if (empty(config('crontinel.saas_key'))) {
+            return;
+        }
+
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $schedule->command('crontinel:report')
+                ->everyMinute()
+                ->withoutOverlapping()
+                ->runInBackground();
+        });
     }
 }

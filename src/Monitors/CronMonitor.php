@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Crontinel\Monitors;
 
+use Cron\CronExpression;
 use Crontinel\Data\CronStatus;
 use Crontinel\Models\CronRun;
 use Illuminate\Console\Scheduling\Schedule;
@@ -29,12 +30,13 @@ class CronMonitor
         $command = $event->command ?? $event->description ?? 'unknown';
         $expression = $event->expression;
         $lastRun = CronRun::latestFor($command);
-        $nextDue = $this->nextDue($event);
+        $nextDue = $this->nextDue($expression);
+        $previousDue = $this->previousDue($expression);
 
         $status = match (true) {
             $lastRun === null => 'never_run',
             $lastRun->exit_code !== 0 => 'failed',
-            $this->isLate($lastRun, $nextDue) => 'late',
+            $this->isLate($lastRun, $previousDue) => 'late',
             default => 'ok',
         };
 
@@ -49,22 +51,42 @@ class CronMonitor
         );
     }
 
-    private function nextDue(mixed $event): Carbon
+    private function nextDue(string $expression): ?Carbon
     {
-        return Carbon::now()->next(
-            fn (Carbon $date) => $event->isDue(app())
-        );
+        try {
+            $expr = new CronExpression($expression);
+
+            return Carbon::instance($expr->getNextRunDate());
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
-    private function isLate(?CronRun $lastRun, Carbon $nextDue): bool
+    private function previousDue(string $expression): ?Carbon
     {
-        if ($lastRun === null) {
+        try {
+            $expr = new CronExpression($expression);
+
+            return Carbon::instance($expr->getPreviousRunDate());
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function isLate(?CronRun $lastRun, ?Carbon $previousDue): bool
+    {
+        if ($lastRun === null || $previousDue === null) {
             return false;
         }
 
+        // Not late if the last run happened after the previous scheduled time
+        if ($lastRun->ran_at->gte($previousDue)) {
+            return false;
+        }
+
+        // Late if we're past the grace period since the previous due time
         $threshold = config('crontinel.cron.late_alert_after_seconds', 120);
 
-        // If the next due time has passed by more than the threshold, we're late
-        return now()->diffInSeconds($nextDue) > $threshold && $nextDue->isPast();
+        return now()->diffInSeconds($previousDue, absolute: true) > $threshold;
     }
 }

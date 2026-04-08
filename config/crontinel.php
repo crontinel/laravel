@@ -22,7 +22,9 @@ return [
     |--------------------------------------------------------------------------
     | SaaS Reporting
     |--------------------------------------------------------------------------
-    | Set CRONTINEL_API_KEY to connect this app to the hosted SaaS.
+    | Set CRONTINEL_API_KEY to connect this app to the hosted SaaS at
+    | app.crontinel.com. When set, status is reported every minute and
+    | cron run events are pushed after each scheduled task completes.
     */
     'saas_key' => env('CRONTINEL_API_KEY'),
     'saas_url' => env('CRONTINEL_API_URL', 'https://app.crontinel.com'),
@@ -67,8 +69,8 @@ return [
     |--------------------------------------------------------------------------
     | Alert Channels
     |--------------------------------------------------------------------------
-    | Supported: "mail", "slack", null
-    | Set CRONTINEL_ALERT_CHANNEL to "mail" or "slack" to enable alerts.
+    | Supported: "mail", "slack", "webhook", null
+    | Set CRONTINEL_ALERT_CHANNEL to enable alerts.
     */
     'alerts' => [
         'channel' => env('CRONTINEL_ALERT_CHANNEL'),
@@ -77,6 +79,12 @@ return [
         ],
         'slack' => [
             'webhook_url' => env('CRONTINEL_SLACK_WEBHOOK'),
+        ],
+        'webhook' => [
+            'url' => env('CRONTINEL_WEBHOOK_URL'),
+            // Optional extra headers, e.g. for authorization:
+            // 'headers' => ['Authorization' => 'Bearer secret'],
+            'headers' => [],
         ],
     ],
 ];

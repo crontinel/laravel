@@ -152,6 +152,18 @@ The OSS package works standalone. To get multi-app hosted dashboards, longer his
 
 ---
 
+## Ecosystem
+
+| Repo | Description |
+|---|---|
+| [crontinel/laravel](https://github.com/crontinel/crontinel) (this repo) | Laravel package — monitors, dashboard, alerts |
+| [crontinel/php](https://github.com/crontinel/php) | Framework-agnostic PHP core this package builds on |
+| [crontinel/mcp-server](https://github.com/crontinel/mcp-server) | MCP server for AI assistants (Claude, Cursor) |
+| [app.crontinel.com](https://app.crontinel.com) | Hosted SaaS dashboard — multi-app, team access, longer history |
+| [docs.crontinel.com](https://docs.crontinel.com) | Full documentation |
+
+---
+
 ## License
 
 MIT — free forever. See [LICENSE](LICENSE).

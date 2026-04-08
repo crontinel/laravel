@@ -20,6 +20,7 @@ class HorizonMonitor
             supervisors: $supervisors,
             failedJobsPerMinute: $failedJobsPerMinute,
             pausedAt: $masterStatus === 'paused' ? now() : null,
+            failedJobsPerMinuteThreshold: (float) config('crontinel.horizon.failed_jobs_per_minute_threshold', 5),
         );
     }
 

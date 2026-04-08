@@ -201,7 +201,7 @@ class AlertService
             $lines[] = '• Horizon is paused (since '.$status->pausedAt->diffForHumans().')';
         }
 
-        $threshold = config('crontinel.horizon.failed_jobs_per_minute_threshold', 5);
+        $threshold = $status->failedJobsPerMinuteThreshold;
         if ($status->failedJobsPerMinute >= $threshold) {
             $lines[] = "• Failed jobs/min: {$status->failedJobsPerMinute} (threshold: {$threshold})";
         }
@@ -218,15 +218,13 @@ class AlertService
     private function buildQueueMessage(QueueStatus $status): string
     {
         $lines = [];
-        $depthTh = config('crontinel.queues.depth_alert_threshold', 1000);
-        $waitTh = config('crontinel.queues.wait_time_alert_seconds', 300);
 
-        if ($status->depth > $depthTh) {
-            $lines[] = "• Queue depth: {$status->depth} jobs (threshold: {$depthTh})";
+        if ($status->depth > $status->depthThreshold) {
+            $lines[] = "• Queue depth: {$status->depth} jobs (threshold: {$status->depthThreshold})";
         }
 
-        if ($status->oldestJobAgeSeconds !== null && $status->oldestJobAgeSeconds > $waitTh) {
-            $lines[] = "• Oldest job waiting: {$status->oldestJobAgeSeconds}s (threshold: {$waitTh}s)";
+        if ($status->oldestJobAgeSeconds !== null && $status->oldestJobAgeSeconds > $status->waitTimeThresholdSeconds) {
+            $lines[] = "• Oldest job waiting: {$status->oldestJobAgeSeconds}s (threshold: {$status->waitTimeThresholdSeconds}s)";
         }
 
         if ($status->failedCount > 0) {

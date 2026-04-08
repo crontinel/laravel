@@ -37,6 +37,8 @@ class QueueMonitor
             depth: $this->getDepth($driver, $connection, $queue),
             failedCount: $this->getFailedCount($queue),
             oldestJobAgeSeconds: $this->getOldestJobAge($driver, $connection, $queue),
+            depthThreshold: (int) config('crontinel.queues.depth_alert_threshold', 1000),
+            waitTimeThresholdSeconds: (int) config('crontinel.queues.wait_time_alert_seconds', 300),
         );
     }
 

@@ -17,28 +17,26 @@ it('is healthy when depth and wait time are within thresholds', function () {
 });
 
 it('is unhealthy when depth exceeds threshold', function () {
-    config()->set('crontinel.queues.depth_alert_threshold', 100);
-
     $status = new QueueStatus(
         connection: 'redis',
         queue: 'default',
         depth: 5000,
         failedCount: 0,
         oldestJobAgeSeconds: null,
+        depthThreshold: 100,
     );
 
     expect($status->isHealthy())->toBeFalse();
 });
 
 it('is unhealthy when oldest job wait time exceeds threshold', function () {
-    config()->set('crontinel.queues.wait_time_alert_seconds', 300);
-
     $status = new QueueStatus(
         connection: 'redis',
         queue: 'default',
         depth: 1,
         failedCount: 0,
         oldestJobAgeSeconds: 600,
+        waitTimeThresholdSeconds: 300,
     );
 
     expect($status->isHealthy())->toBeFalse();

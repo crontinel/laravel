@@ -1,6 +1,6 @@
 {
-    "name": "harunrrayhan/crontinel",
-    "description": "Background job and cron monitoring for Laravel. Monitors Horizon internals, queue depth, and cron health.",
+    "name": "crontinel/laravel",
+    "description": "Laravel adapter for crontinel/php. Monitors Horizon internals, queue depth, and cron health — with dashboard, alerts, and SaaS reporting.",
     "type": "library",
     "license": "MIT",
     "keywords": ["laravel", "queue", "horizon", "cron", "monitoring", "crontinel"],
@@ -12,6 +12,7 @@
     ],
     "require": {
         "php": "^8.2|^8.3|^8.4",
+        "crontinel/php": "@dev",
         "illuminate/support": "^11.0|^12.0|^13.0",
         "illuminate/console": "^11.0|^12.0|^13.0",
         "illuminate/queue": "^11.0|^12.0|^13.0"
@@ -52,6 +53,15 @@
         "lint": "vendor/bin/pint",
         "lint:check": "vendor/bin/pint --test"
     },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../php",
+            "options": {
+                "symlink": true
+            }
+        }
+    ],
     "minimum-stability": "dev",
     "prefer-stable": true
 }

@@ -5,12 +5,12 @@ declare(strict_types=1);
 use Crontinel\Data\CronStatus;
 use Crontinel\Data\HorizonStatus;
 use Crontinel\Data\QueueStatus;
+use Crontinel\Mail\AlertMail;
 use Crontinel\Services\AlertService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
-
 
 beforeEach(function () {
     Cache::flush();
@@ -98,8 +98,7 @@ it('fires slack when queue depth exceeds threshold', function () {
 
     app(AlertService::class)->evaluateQueue($status);
 
-    Http::assertSent(fn ($req) =>
-        str_contains($req->body(), 'Queue depth') &&
+    Http::assertSent(fn ($req) => str_contains($req->body(), 'Queue depth') &&
         str_contains($req->body(), '1500')
     );
 });
@@ -153,8 +152,7 @@ it('fires slack when cron failed', function () {
 
     app(AlertService::class)->evaluateCron($status);
 
-    Http::assertSent(fn ($req) =>
-        str_contains($req->body(), 'send:invoices') &&
+    Http::assertSent(fn ($req) => str_contains($req->body(), 'send:invoices') &&
         str_contains($req->body(), 'exited with code')
     );
 });
@@ -212,5 +210,5 @@ it('sends mail when channel is mail', function () {
 
     app(AlertService::class)->evaluateHorizon($status);
 
-    Mail::assertSent(\Crontinel\Mail\AlertMail::class);
+    Mail::assertSent(AlertMail::class);
 });

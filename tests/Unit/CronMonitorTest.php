@@ -3,8 +3,9 @@
 declare(strict_types=1);
 
 use Crontinel\Data\CronStatus;
+use Crontinel\Data\HorizonStatus;
+use Crontinel\Data\QueueStatus;
 use Illuminate\Support\Carbon;
-
 
 // ─── CronStatus::isHealthy ────────────────────────────────────────────────
 
@@ -70,7 +71,7 @@ it('queue is healthy within thresholds', function () {
     config(['crontinel.queues.depth_alert_threshold' => 1000]);
     config(['crontinel.queues.wait_time_alert_seconds' => 300]);
 
-    $status = new \Crontinel\Data\QueueStatus(
+    $status = new QueueStatus(
         connection: 'redis',
         queue: 'default',
         depth: 50,
@@ -84,7 +85,7 @@ it('queue is healthy within thresholds', function () {
 it('queue is unhealthy when depth exceeds threshold', function () {
     config(['crontinel.queues.depth_alert_threshold' => 500]);
 
-    $status = new \Crontinel\Data\QueueStatus(
+    $status = new QueueStatus(
         connection: 'redis',
         queue: 'default',
         depth: 600,
@@ -99,7 +100,7 @@ it('queue is unhealthy when oldest job age exceeds wait threshold', function () 
     config(['crontinel.queues.depth_alert_threshold' => 1000]);
     config(['crontinel.queues.wait_time_alert_seconds' => 120]);
 
-    $status = new \Crontinel\Data\QueueStatus(
+    $status = new QueueStatus(
         connection: 'redis',
         queue: 'emails',
         depth: 5,
@@ -113,7 +114,7 @@ it('queue is unhealthy when oldest job age exceeds wait threshold', function () 
 it('queue is healthy when oldest job age is null', function () {
     config(['crontinel.queues.depth_alert_threshold' => 1000]);
 
-    $status = new \Crontinel\Data\QueueStatus(
+    $status = new QueueStatus(
         connection: 'redis',
         queue: 'default',
         depth: 0,
@@ -129,7 +130,7 @@ it('queue is healthy when oldest job age is null', function () {
 it('horizon is healthy when running and not paused', function () {
     config(['crontinel.horizon.failed_jobs_per_minute_threshold' => 5]);
 
-    $status = new \Crontinel\Data\HorizonStatus(
+    $status = new HorizonStatus(
         running: true,
         supervisors: [],
         failedJobsPerMinute: 0.5,
@@ -140,7 +141,7 @@ it('horizon is healthy when running and not paused', function () {
 });
 
 it('horizon is unhealthy when not running', function () {
-    $status = new \Crontinel\Data\HorizonStatus(
+    $status = new HorizonStatus(
         running: false,
         supervisors: [],
         failedJobsPerMinute: 0.0,
@@ -151,7 +152,7 @@ it('horizon is unhealthy when not running', function () {
 });
 
 it('horizon is unhealthy when paused', function () {
-    $status = new \Crontinel\Data\HorizonStatus(
+    $status = new HorizonStatus(
         running: true,
         supervisors: [],
         failedJobsPerMinute: 0.0,
@@ -164,7 +165,7 @@ it('horizon is unhealthy when paused', function () {
 it('horizon is unhealthy when failed rate exceeds threshold', function () {
     config(['crontinel.horizon.failed_jobs_per_minute_threshold' => 5]);
 
-    $status = new \Crontinel\Data\HorizonStatus(
+    $status = new HorizonStatus(
         running: true,
         supervisors: [],
         failedJobsPerMinute: 8.0,

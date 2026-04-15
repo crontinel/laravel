@@ -21,8 +21,23 @@ class QueueMonitor
         $watchList = config('crontinel.queues.watch', []);
         $connection = config('queue.default', 'sync');
 
-        return collect($this->resolveQueues($connection, $watchList))
-            ->map(fn (string $queue) => $this->statusFor($connection, $queue))
+        $queues = $this->resolveQueues($connection, $watchList);
+        $driver = config("queue.connections.{$connection}.driver", 'sync');
+
+        // Batch-fetch data for all queues in one query per driver type
+        $oldestAges = $this->batchOldestJobAges($driver, $connection, $queues);
+        $failedCounts = $this->batchFailedCounts($queues);
+
+        return collect($queues)
+            ->map(fn (string $queue) => new QueueStatus(
+                connection: $connection,
+                queue: $queue,
+                depth: $this->getDepth($driver, $connection, $queue),
+                failedCount: $failedCounts[$queue] ?? 0,
+                oldestJobAgeSeconds: $oldestAges[$queue] ?? null,
+                depthThreshold: (int) config('crontinel.queues.depth_alert_threshold', 1000),
+                waitTimeThresholdSeconds: (int) config('crontinel.queues.wait_time_alert_seconds', 300),
+            ))
             ->values()
             ->all();
     }
@@ -78,6 +93,30 @@ class QueueMonitor
         }
     }
 
+    /**
+     * @return array<string, int|null>
+     */
+    private function batchFailedCounts(array $queues): array
+    {
+        if (empty($queues)) {
+            return [];
+        }
+
+        try {
+            $rows = DB::table('failed_jobs')
+                ->whereIn('queue', $queues)
+                ->select('queue', DB::raw('COUNT(*) as count'))
+                ->groupBy('queue')
+                ->pluck('count', 'queue')
+                ->all();
+
+            // Fill missing queues with 0
+            return array_merge(array_fill_keys($queues, 0), $rows);
+        } catch (\Throwable) {
+            return array_fill_keys($queues, 0);
+        }
+    }
+
     private function getOldestJobAge(string $driver, string $connection, string $queue): ?int
     {
         try {
@@ -88,6 +127,86 @@ class QueueMonitor
             };
         } catch (\Throwable) {
             return null;
+        }
+    }
+
+    /**
+     * @return array<string, int|null>
+     */
+    private function batchOldestJobAges(string $driver, string $connection, array $queues): array
+    {
+        if (empty($queues)) {
+            return [];
+        }
+
+        try {
+            return match ($driver) {
+                'database' => $this->batchDatabaseOldestJobAges($queues),
+                'redis' => $this->batchRedisOldestJobAges($connection, $queues),
+                default => array_fill_keys($queues, null),
+            };
+        } catch (\Throwable) {
+            return array_fill_keys($queues, null);
+        }
+    }
+
+    /**
+     * @return array<string, int|null>
+     */
+    private function batchDatabaseOldestJobAges(array $queues): array
+    {
+        // Single query: get oldest created_at per queue
+        $rows = DB::table('jobs')
+            ->whereIn('queue', $queues)
+            ->select('queue', DB::raw('MIN(created_at) as oldest_at'))
+            ->groupBy('queue')
+            ->pluck('oldest_at', 'queue')
+            ->all();
+
+        $result = [];
+        foreach ($queues as $queue) {
+            if (isset($rows[$queue])) {
+                $result[$queue] = (int) now()->diffInSeconds($rows[$queue]);
+            } else {
+                $result[$queue] = null;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @return array<string, int|null>
+     */
+    private function batchRedisOldestJobAges(string $connection, array $queues): array
+    {
+        try {
+            $redisConnection = config("queue.connections.{$connection}.connection", 'default');
+            $pipe = Redis::connection($redisConnection)->pipeline();
+
+            foreach ($queues as $queue) {
+                $pipe->lindex("queues:{$queue}", -1);
+            }
+
+            $results = $pipe->exec();
+
+            $ages = [];
+            foreach ($queues as $i => $queue) {
+                $raw = $results[$i] ?? null;
+                if (! $raw) {
+                    $ages[$queue] = null;
+
+                    continue;
+                }
+
+                $payload = json_decode($raw, true);
+                $pushedAt = $payload['pushedAt'] ?? null;
+                $ages[$queue] = $pushedAt ? (int) (time() - (int) $pushedAt) : null;
+            }
+
+            return $ages;
+        } catch (\Throwable) {
+            return array_fill_keys($queues, null);
         }
     }
 
@@ -120,6 +239,9 @@ class QueueMonitor
         }
     }
 
+    /**
+     * @return string[]
+     */
     private function resolveQueues(string $connection, array $watchList): array
     {
         if (! empty($watchList)) {

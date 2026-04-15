@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Crontinel\Monitors;
 
 use Crontinel\Data\HorizonStatus;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 
 class HorizonMonitor
@@ -27,16 +28,19 @@ class HorizonMonitor
     private function getMasterStatus(): string
     {
         try {
-            $masters = Redis::connection('horizon')->smembers('horizon:masters');
+            $connection = $this->resolveHorizonConnection();
+            $masters = Redis::connection($connection)->smembers('horizon:masters');
             if (empty($masters)) {
                 return 'stopped';
             }
 
             $master = reset($masters);
-            $info = Redis::connection('horizon')->hmget($master, ['status']);
+            $info = Redis::connection($connection)->hmget($master, ['status']);
 
             return $info[0] ?? 'unknown';
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Log::warning('Crontinel: Could not reach Horizon Redis connection.', ['error' => $e->getMessage()]);
+
             return 'unavailable';
         }
     }
@@ -44,11 +48,12 @@ class HorizonMonitor
     private function getSupervisors(): array
     {
         try {
+            $connection = $this->resolveHorizonConnection();
             $supervisors = [];
-            $keys = Redis::connection('horizon')->keys('horizon:supervisors:*');
+            $keys = Redis::connection($connection)->keys('horizon:supervisors:*');
 
             foreach ($keys as $key) {
-                $data = Redis::connection('horizon')->hmget($key, ['name', 'status', 'processes', 'queue']);
+                $data = Redis::connection($connection)->hmget($key, ['name', 'status', 'processes', 'queue']);
                 $supervisors[] = [
                     'name' => $data[0] ?? $key,
                     'status' => $data[1] ?? 'unknown',
@@ -58,7 +63,9 @@ class HorizonMonitor
             }
 
             return $supervisors;
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Log::warning('Crontinel: Could not read Horizon supervisors.', ['error' => $e->getMessage()]);
+
             return [];
         }
     }
@@ -66,12 +73,27 @@ class HorizonMonitor
     private function getFailedJobsPerMinute(): float
     {
         try {
+            $connection = $this->resolveHorizonConnection();
             $key = 'horizon:failed_jobs_per_minute';
-            $value = Redis::connection('horizon')->get($key);
+            $value = Redis::connection($connection)->get($key);
 
             return (float) ($value ?? 0);
         } catch (\Throwable) {
             return 0.0;
         }
+    }
+
+    private function resolveHorizonConnection(): string
+    {
+        $connection = config('crontinel.horizon.connection', 'horizon');
+
+        // Validate the connection exists before trying to use it
+        $redisConfig = config('database.redis.'.$connection);
+
+        if (! $redisConfig) {
+            throw new \RuntimeException("Redis connection [{$connection}] is not configured.");
+        }
+
+        return $connection;
     }
 }

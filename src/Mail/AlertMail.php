@@ -17,6 +17,6 @@ class AlertMail extends Mailable
     {
         return $this
             ->subject("[Crontinel] {$this->alertTitle}")
-            ->text('crontinel::emails.alert');
+            ->view('crontinel::emails.alert');
     }
 }

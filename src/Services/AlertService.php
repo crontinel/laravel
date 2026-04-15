@@ -171,11 +171,12 @@ class AlertService
             return;
         }
 
-        $headers = config('crontinel.alerts.webhook.headers', []);
+        $headers = $this->resolveWebhookHeaders();
+        $timeout = (int) config('crontinel.alerts.webhook.timeout', 10);
 
         try {
             Http::withHeaders($headers)
-                ->timeout(10)
+                ->timeout($timeout)
                 ->post($url, [
                     'title' => $title,
                     'message' => $message,
@@ -187,6 +188,27 @@ class AlertService
         } catch (\Throwable $e) {
             Log::error('Crontinel: Failed to send webhook alert.', ['error' => $e->getMessage()]);
         }
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function resolveWebhookHeaders(): array
+    {
+        $raw = config('crontinel.alerts.webhook.headers');
+
+        if (! $raw) {
+            return [];
+        }
+
+        // Accept JSON string from env, e.g. '{"Authorization": "Bearer tok"}'
+        $decoded = json_decode((string) $raw, true);
+
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+
+        return [];
     }
 
     private function buildHorizonMessage(HorizonStatus $status): string

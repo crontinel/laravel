@@ -9,6 +9,7 @@ use Crontinel\Data\CronStatus;
 use Crontinel\Models\CronRun;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class CronMonitor
 {
@@ -57,7 +58,9 @@ class CronMonitor
             $expr = new CronExpression($expression);
 
             return Carbon::instance($expr->getNextRunDate());
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Log::warning('Crontinel: Invalid cron expression.', ['expression' => $expression, 'error' => $e->getMessage()]);
+
             return null;
         }
     }
@@ -68,7 +71,9 @@ class CronMonitor
             $expr = new CronExpression($expression);
 
             return Carbon::instance($expr->getPreviousRunDate());
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Log::warning('Crontinel: Invalid cron expression.', ['expression' => $expression, 'error' => $e->getMessage()]);
+
             return null;
         }
     }

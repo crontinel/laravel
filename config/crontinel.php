@@ -82,9 +82,9 @@ return [
         ],
         'webhook' => [
             'url' => env('CRONTINEL_WEBHOOK_URL'),
-            // Optional extra headers, e.g. for authorization:
-            // 'headers' => ['Authorization' => 'Bearer secret'],
-            'headers' => [],
+            // Auth headers as JSON: '{"Authorization": "Bearer token"}'
+            'headers' => env('CRONTINEL_WEBHOOK_HEADERS'),
+            'timeout' => env('CRONTINEL_WEBHOOK_TIMEOUT', 10),
         ],
     ],
 ];

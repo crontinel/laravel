@@ -8,9 +8,24 @@ use Crontinel\Models\CronRun;
 use Crontinel\Services\SaasReporter;
 use Illuminate\Console\Events\ScheduledTaskFailed;
 use Illuminate\Console\Events\ScheduledTaskFinished;
+use Illuminate\Console\Events\ScheduledTaskStarting;
+use Illuminate\Support\Facades\Cache;
 
 class RecordScheduledTaskRun
 {
+    /** @var array<string, string> Task command => startedAt ISO8601 */
+    private array $taskStartTimes = [];
+
+    public function handleStarting(ScheduledTaskStarting $event): void
+    {
+        if (! config('crontinel.cron.enabled', true)) {
+            return;
+        }
+
+        $command = $this->resolveCommand($event->task);
+        $this->taskStartTimes[$command] = now()->toIso8601String();
+    }
+
     public function handleFinished(ScheduledTaskFinished $event): void
     {
         if (! config('crontinel.cron.enabled', true)) {
@@ -20,7 +35,7 @@ class RecordScheduledTaskRun
         $command = $this->resolveCommand($event->task);
         $durationMs = (int) ($event->runtime * 1000);
         $finishedAt = now();
-        $startedAt = $finishedAt->clone()->subMilliseconds($durationMs);
+        $startedAt = $this->taskStartTimes[$command] ?? $finishedAt->clone()->subMilliseconds($durationMs)->toIso8601String();
 
         CronRun::record(
             command: $command,
@@ -36,9 +51,11 @@ class RecordScheduledTaskRun
             exitCode: 0,
             durationMs: $durationMs,
             output: null,
-            startedAt: $startedAt->toIso8601String(),
+            startedAt: $startedAt,
             finishedAt: $finishedAt->toIso8601String(),
         );
+
+        unset($this->taskStartTimes[$command]);
     }
 
     public function handleFailed(ScheduledTaskFailed $event): void
@@ -49,7 +66,8 @@ class RecordScheduledTaskRun
 
         $command = $this->resolveCommand($event->task);
         $output = $event->exception?->getMessage();
-        $finishedAt = now();
+        $finishedAt = now()->toIso8601String();
+        $startedAt = $this->taskStartTimes[$command] ?? $finishedAt;
 
         CronRun::record(
             command: $command,
@@ -63,9 +81,11 @@ class RecordScheduledTaskRun
             exitCode: 1,
             durationMs: 0,
             output: $output,
-            startedAt: $finishedAt->toIso8601String(),
-            finishedAt: $finishedAt->toIso8601String(),
+            startedAt: $startedAt,
+            finishedAt: $finishedAt,
         );
+
+        unset($this->taskStartTimes[$command]);
     }
 
     private function resolveCommand(mixed $task): string

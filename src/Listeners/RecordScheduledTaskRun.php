@@ -9,11 +9,11 @@ use Crontinel\Services\SaasReporter;
 use Illuminate\Console\Events\ScheduledTaskFailed;
 use Illuminate\Console\Events\ScheduledTaskFinished;
 use Illuminate\Console\Events\ScheduledTaskStarting;
+use Illuminate\Support\Facades\Cache;
 
 class RecordScheduledTaskRun
 {
-    /** @var array<string, string> Task command => startedAt ISO8601 */
-    private array $taskStartTimes = [];
+    private const START_TIME_PREFIX = 'crontinel_task_start:';
 
     public function handleStarting(ScheduledTaskStarting $event): void
     {
@@ -22,7 +22,7 @@ class RecordScheduledTaskRun
         }
 
         $command = $this->resolveCommand($event->task);
-        $this->taskStartTimes[$command] = now()->toIso8601String();
+        Cache::put(self::START_TIME_PREFIX.$command, now()->toIso8601String(), 300);
     }
 
     public function handleFinished(ScheduledTaskFinished $event): void
@@ -34,7 +34,8 @@ class RecordScheduledTaskRun
         $command = $this->resolveCommand($event->task);
         $durationMs = (int) ($event->runtime * 1000);
         $finishedAt = now();
-        $startedAt = $this->taskStartTimes[$command] ?? $finishedAt->clone()->subMilliseconds($durationMs)->toIso8601String();
+        $startedAt = Cache::pull(self::START_TIME_PREFIX.$command)
+            ?? $finishedAt->clone()->subMilliseconds($durationMs)->toIso8601String();
 
         CronRun::record(
             command: $command,
@@ -42,8 +43,6 @@ class RecordScheduledTaskRun
             durationMs: $durationMs,
             output: null,
         );
-
-        $this->pruneOldRuns();
 
         app(SaasReporter::class)->reportCronRun(
             command: $command,
@@ -53,8 +52,6 @@ class RecordScheduledTaskRun
             startedAt: $startedAt,
             finishedAt: $finishedAt->toIso8601String(),
         );
-
-        unset($this->taskStartTimes[$command]);
     }
 
     public function handleFailed(ScheduledTaskFailed $event): void
@@ -66,7 +63,7 @@ class RecordScheduledTaskRun
         $command = $this->resolveCommand($event->task);
         $output = $event->exception?->getMessage();
         $finishedAt = now()->toIso8601String();
-        $startedAt = $this->taskStartTimes[$command] ?? $finishedAt;
+        $startedAt = Cache::pull(self::START_TIME_PREFIX.$command) ?? $finishedAt;
 
         CronRun::record(
             command: $command,
@@ -83,8 +80,6 @@ class RecordScheduledTaskRun
             startedAt: $startedAt,
             finishedAt: $finishedAt,
         );
-
-        unset($this->taskStartTimes[$command]);
     }
 
     private function resolveCommand(mixed $task): string
@@ -92,12 +87,5 @@ class RecordScheduledTaskRun
         return $task->command
             ?? $task->description
             ?? (string) $task;
-    }
-
-    private function pruneOldRuns(): void
-    {
-        $retainDays = config('crontinel.cron.retain_days', 30);
-
-        CronRun::where('ran_at', '<', now()->subDays($retainDays))->delete();
     }
 }

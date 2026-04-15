@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crontinel</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    {{-- Styles are provided by the host application. Publish this view to customize. --}}
     <meta http-equiv="refresh" content="30">
 </head>
 <body class="bg-gray-950 text-gray-100 font-mono text-sm">

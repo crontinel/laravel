@@ -35,7 +35,7 @@ class CronMonitor
         $previousDue = $this->previousDue($expression);
 
         $status = match (true) {
-            $lastRun === null => 'never_run',
+            $lastRun === null => $this->isPastFirstWindow($nextDue) ? 'never_run' : 'ok',
             $lastRun->exit_code !== 0 => 'failed',
             $this->isLate($lastRun, $previousDue) => 'late',
             default => 'ok',
@@ -76,6 +76,16 @@ class CronMonitor
 
             return null;
         }
+    }
+
+    private function isPastFirstWindow(?Carbon $nextDue): bool
+    {
+        // If next due hasn't arrived yet, this is a new command — don't alert on first deploy
+        if ($nextDue === null) {
+            return true; // no schedule, treat as needing attention
+        }
+
+        return now()->gte($nextDue);
     }
 
     private function isLate(?CronRun $lastRun, ?Carbon $previousDue): bool

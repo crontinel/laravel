@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use Laravel\Horizon\Horizon;
 
 return [
     /*
@@ -36,7 +37,7 @@ return [
     | Set to false if you are not using Laravel Horizon.
     */
     'horizon' => [
-        'enabled' => env('CRONTINEL_HORIZON', true),
+        'enabled' => env('CRONTINEL_HORIZON', class_exists(Horizon::class)),
         'supervisor_alert_after_seconds' => 60,
         'failed_jobs_per_minute_threshold' => 5,
         'connection' => env('CRONTINEL_HORIZON_CONNECTION', 'horizon'),

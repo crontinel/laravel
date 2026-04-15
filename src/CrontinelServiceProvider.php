@@ -14,6 +14,7 @@ use Illuminate\Console\Events\ScheduledTaskFinished;
 use Illuminate\Console\Events\ScheduledTaskStarting;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class CrontinelServiceProvider extends ServiceProvider
@@ -25,6 +26,8 @@ class CrontinelServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->registerGate();
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'crontinel');
@@ -52,6 +55,15 @@ class CrontinelServiceProvider extends ServiceProvider
                 __DIR__.'/../resources/views' => resource_path('views/vendor/crontinel'),
             ], 'crontinel-views');
         }
+    }
+
+    private function registerGate(): void
+    {
+        // Define a gate for crontinel.view.
+        // Applications should authorize this based on their own user/team model.
+        // For example, in App\\Providers\\AuthServiceProvider:
+        // Gate::define('crontinel.view', fn ($user) => $user->ownsCrontinel());
+        Gate::define('crontinel.view', fn () => true); // permissive default; override in app
     }
 
     private function registerEventListeners(): void

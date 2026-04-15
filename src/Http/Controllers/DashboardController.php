@@ -30,6 +30,9 @@ class DashboardController extends Controller
 
     public function apiStatus(): JsonResponse
     {
+        // Gate::authorize checks against the current user and throws 403 if denied
+        Gate::authorize('crontinel.view');
+
         return response()->json([
             'horizon' => config('crontinel.horizon.enabled') ? $this->horizon->status() : null,
             'queues' => config('crontinel.queues.enabled') ? $this->queue->all() : [],

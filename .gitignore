@@ -1,6 +1,19 @@
-/vendor/
-/node_modules/
+oss/
+landing/
+app/
+node_modules/
 .env
-.env.testing
-.phpunit.result.cache
-composer.lock
+.env.local
+
+# Untracked project subdirectories
+docs/
+hub/
+mcp-server/
+php/
+memory/
+.env.secrets
+
+# Claude Code
+.claude/channels/
+.env.packagist
+packagist.env

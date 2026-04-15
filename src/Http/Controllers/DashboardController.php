@@ -9,6 +9,7 @@ use Crontinel\Monitors\HorizonMonitor;
 use Crontinel\Monitors\QueueMonitor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 class DashboardController extends Controller

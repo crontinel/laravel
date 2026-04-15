@@ -25,6 +25,7 @@ class QueueMonitor
         $driver = config("queue.connections.{$connection}.driver", 'sync');
 
         // Batch-fetch data for all queues in one query per driver type
+        $depths = $this->batchDepths($driver, $connection, $queues);
         $oldestAges = $this->batchOldestJobAges($driver, $connection, $queues);
         $failedCounts = $this->batchFailedCounts($queues);
 
@@ -32,7 +33,7 @@ class QueueMonitor
             ->map(fn (string $queue) => new QueueStatus(
                 connection: $connection,
                 queue: $queue,
-                depth: $this->getDepth($driver, $connection, $queue),
+                depth: $depths[$queue] ?? 0,
                 failedCount: $failedCounts[$queue] ?? 0,
                 oldestJobAgeSeconds: $oldestAges[$queue] ?? null,
                 depthThreshold: (int) config('crontinel.queues.depth_alert_threshold', 1000),
@@ -67,6 +68,70 @@ class QueueMonitor
             };
         } catch (\Throwable) {
             return 0;
+        }
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function batchDepths(string $driver, string $connection, array $queues): array
+    {
+        if (empty($queues)) {
+            return [];
+        }
+
+        try {
+            return match ($driver) {
+                'database' => $this->batchDatabaseDepths($queues),
+                'redis' => $this->batchRedisDepths($connection, $queues),
+                default => array_fill_keys($queues, 0),
+            };
+        } catch (\Throwable) {
+            return array_fill_keys($queues, 0);
+        }
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function batchDatabaseDepths(array $queues): array
+    {
+        $rows = DB::table('jobs')
+            ->whereIn('queue', $queues)
+            ->select('queue', DB::raw('COUNT(*) as count'))
+            ->groupBy('queue')
+            ->pluck('count', 'queue')
+            ->all();
+
+        return array_merge(array_fill_keys($queues, 0), $rows);
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function batchRedisDepths(string $connection, array $queues): array
+    {
+        try {
+            $redisConnection = config("queue.connections.{$connection}.connection", 'default');
+            $pipe = Redis::connection($redisConnection)->pipeline();
+
+            foreach ($queues as $queue) {
+                $pipe->llen("queues:{$queue}");
+                $pipe->zcard("queues:{$queue}:delayed");
+            }
+
+            $results = $pipe->exec();
+            $depths = [];
+
+            foreach ($queues as $i => $queue) {
+                $pending = (int) ($results[$i * 2] ?? 0);
+                $delayed = (int) ($results[$i * 2 + 1] ?? 0);
+                $depths[$queue] = $pending + $delayed;
+            }
+
+            return $depths;
+        } catch (\Throwable) {
+            return array_fill_keys($queues, 0);
         }
     }
 

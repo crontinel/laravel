@@ -208,6 +208,8 @@ class AlertService
             return $decoded;
         }
 
+        Log::warning('Crontinel: CRONTINEL_WEBHOOK_HEADERS must be valid JSON. Ignoring.');
+
         return [];
     }
 

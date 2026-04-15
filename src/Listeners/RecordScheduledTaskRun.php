@@ -9,7 +9,6 @@ use Crontinel\Services\SaasReporter;
 use Illuminate\Console\Events\ScheduledTaskFailed;
 use Illuminate\Console\Events\ScheduledTaskFinished;
 use Illuminate\Console\Events\ScheduledTaskStarting;
-use Illuminate\Support\Facades\Cache;
 
 class RecordScheduledTaskRun
 {

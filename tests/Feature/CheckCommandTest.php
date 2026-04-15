@@ -14,6 +14,9 @@ beforeEach(function () {
     $this->loadMigrationsFrom(__DIR__.'/../../database/migrations');
     $this->artisan('migrate', ['--database' => 'testing']);
 
+    // Explicitly enable horizon — auto-detection (class_exists) doesn't work in tests
+    config()->set('crontinel.horizon.enabled', true);
+
     // Bind mocks
     $this->horizonMock = Mockery::mock(HorizonMonitor::class);
     $this->queueMock = Mockery::mock(QueueMonitor::class);

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Crontinel\Commands\PruneCommand;
 use Crontinel\Listeners\RecordScheduledTaskRun;
 use Crontinel\Models\CronRun;
 use Illuminate\Console\Events\ScheduledTaskFailed;
@@ -52,7 +53,7 @@ it('does not record runs when cron monitoring is disabled', function () {
     expect(CronRun::count())->toBe(0);
 });
 
-it('prunes old cron runs beyond retain_days', function () {
+it('prunes old cron runs beyond retain_days via PruneCommand', function () {
     config()->set('crontinel.cron.retain_days', 7);
 
     CronRun::create([
@@ -64,12 +65,10 @@ it('prunes old cron runs beyond retain_days', function () {
 
     expect(CronRun::count())->toBe(1);
 
-    $task = makeScheduledEvent('php artisan inspire');
-    $listener = new RecordScheduledTaskRun;
-    $listener->handleFinished(new ScheduledTaskFinished($task, 0.05));
+    // Prune is now handled exclusively by PruneCommand, not inline
+    $this->artisan('crontinel:prune')->assertExitCode(0);
 
-    expect(CronRun::count())->toBe(1)
-        ->and(CronRun::first()->command)->toBe('php artisan inspire');
+    expect(CronRun::count())->toBe(0);
 });
 
 // Use Mockery to create a proper Illuminate\Console\Scheduling\Event mock

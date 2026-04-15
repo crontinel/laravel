@@ -1,0 +1,64 @@
+{
+    "name": "crontinel/laravel",
+    "description": "Laravel adapter for crontinel/php. Monitors Horizon internals, queue depth, and cron health — with dashboard, alerts, and SaaS reporting.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["laravel", "queue", "horizon", "cron", "monitoring", "crontinel"],
+    "homepage": "https://crontinel.com",
+    "authors": [
+        {
+            "name": "Harun R Rayhan",
+            "email": "me@harunray.com",
+            "homepage": "https://github.com/HarunRRayhan"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/crontinel/laravel/issues",
+        "source": "https://github.com/crontinel/laravel"
+    },
+    "require": {
+        "php": "^8.2|^8.3|^8.4",
+        "crontinel/php": "^0.1",
+        "illuminate/support": "^11.0|^12.0|^13.0",
+        "illuminate/console": "^11.0|^12.0|^13.0",
+        "illuminate/queue": "^11.0|^12.0|^13.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.0",
+        "orchestra/testbench": "^9.0|^10.0|^11.0",
+        "pestphp/pest": "^3.0",
+        "pestphp/pest-plugin-laravel": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Crontinel\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Crontinel\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Crontinel\\CrontinelServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "pestphp/pest": true
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/pest",
+        "test:coverage": "vendor/bin/pest --coverage",
+        "lint": "vendor/bin/pint",
+        "lint:check": "vendor/bin/pint --test"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

@@ -1,0 +1,12 @@
+# Crontinel — GitHub Copilot Instructions
+
+> Full context is in AI_CONTEXT.md. Read that file first before making any changes.
+
+## Quick reference
+
+- Product: Crontinel (crontinel.com) — Laravel Cron & Queue monitoring SaaS + OSS package
+- Namespace: `Crontinel\` | Commands: `crontinel:*` | Config: `config('crontinel.*')`
+- Stack: PHP 8.2+, Laravel 12, Livewire 3, PostgreSQL, Redis, Pest tests
+- Strict types on every PHP file. PSR-12. No unnecessary abstractions.
+- Full specs: PRD.md (what to build) + ARCHITECTURE.md (all decisions)
+- Do not suggest features not defined in PRD.md

@@ -53,7 +53,7 @@ class SaasReporter
 
             Http::withToken($this->apiKey())
                 ->timeout(10)
-                ->post($this->saasUrl('/api/ping'), $payload);
+                ->post($this->saasUrl('/v1/ingest/ping'), $payload);
         } catch (\Throwable $e) {
             Log::warning('Crontinel: failed to report status to SaaS', ['error' => $e->getMessage()]);
         }
@@ -74,7 +74,7 @@ class SaasReporter
         try {
             Http::withToken($this->apiKey())
                 ->timeout(10)
-                ->post($this->saasUrl('/api/cron'), [
+                ->post($this->saasUrl('/v1/ingest/cron'), [
                     'command' => $command,
                     'exit_code' => $exitCode,
                     'duration_ms' => $durationMs,

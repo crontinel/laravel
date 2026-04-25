@@ -76,7 +76,7 @@ return [
 
     // Connect to Crontinel SaaS for multi-app hosted dashboards (optional)
     'saas_key' => env('CRONTINEL_API_KEY'),
-    'saas_url' => env('CRONTINEL_API_URL', 'https://app.crontinel.com/api'),
+    'saas_url' => env('CRONTINEL_API_URL', 'https://app.crontinel.com'),
 
     'horizon' => [
         'enabled'                          => true,

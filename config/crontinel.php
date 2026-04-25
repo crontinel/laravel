@@ -28,7 +28,7 @@ return [
     | cron run events are pushed after each scheduled task completes.
     */
     'saas_key' => env('CRONTINEL_API_KEY'),
-    'saas_url' => env('CRONTINEL_API_URL', 'https://app.crontinel.com'),
+    'saas_url' => env('CRONTINEL_API_URL', 'https://app.crontinel.com/api'),
 
     /*
     |--------------------------------------------------------------------------

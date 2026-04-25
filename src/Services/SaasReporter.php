@@ -129,6 +129,11 @@ class SaasReporter
     {
         $base = rtrim(config('crontinel.saas_url', 'https://app.crontinel.com'), '/');
 
-        return $base.$path;
+        // Normalize: strip trailing /api or /api/ so either
+        // CRONTINEL_API_URL=https://app.crontinel.com or
+        // CRONTINEL_API_URL=https://app.crontinel.com/api works correctly
+        $base = preg_replace('#/api/?$#', '', $base);
+
+        return $base.'/api'.$path;
     }
 }

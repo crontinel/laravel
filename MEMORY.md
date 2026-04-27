@@ -139,8 +139,7 @@ Route **all coding, content writing, and reviews** to `@CrontinelOnM4AirCCBot` v
 - **USE:** `from agentmail import AgentMail; client = AgentMail(api_key='...'); threads = client.threads.list()`
 
 ### Cloudflare
-- **Global API Key (WORKING):** `~/Work/crontinel/app/.env` → `CF_GLOBAL_KEY`
-- **Key:** `***REMOVED***`
+- **Global API Key:** stored in `~/Work/crontinel/app/.env` as `CF_GLOBAL_KEY`
 - **Email:** `info@crontinel.com`
 - **Auth:** `X-Auth-Email` + `X-Auth-Key` headers (NOT Bearer token)
 - **API:** `https://api.cloudflare.com/client/v4`

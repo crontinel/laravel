@@ -21,3 +21,4 @@ packagist.env
 
 # Secrets
 .secrets/
+MEMORY.md

@@ -1,0 +1,39 @@
+#!/usr/bin/expect -f
+
+set timeout 60
+set username "crontinel"
+set password "Crontinel2026!"
+set email "info@crontinel.com"
+set registry "https://registry.npmjs.org"
+
+spawn npm adduser --registry=$registry --auth-type=legacy
+
+expect {
+    "Username:" {
+        send "$username\r"
+        exp_continue
+    }
+    "Email:" {
+        send "$email\r"
+        exp_continue
+    }
+    "Password:" {
+        send "$password\r"
+        exp_continue
+    }
+    "Email verification code" {
+        # User needs to check email - exit and let them do it
+        puts "\n\n=== EMAIL VERIFICATION NEEDED ==="
+        puts "Check email at info@crontinel.com for verification code"
+        puts "Run this command again after verifying:"
+        puts "npm adduser --registry=$registry --auth-type=legacy"
+        exit 1
+    }
+    eof {
+        puts "\nSignup process completed or ended"
+    }
+    timeout {
+        puts "Timeout waiting for prompts"
+        exit 1
+    }
+}

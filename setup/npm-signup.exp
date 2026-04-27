@@ -1,0 +1,18 @@
+#!/usr/bin/expect -f
+
+set username "crontinel"
+set password "Crontinel2026!"
+set email "info@crontinel.com"
+
+spawn npm adduser --registry=https://registry.npmjs.org
+
+expect "Username:"
+send "$username\r"
+
+expect "Email:"
+send "$email\r"
+
+expect "Password:"
+send "$password\r"
+
+expect eof

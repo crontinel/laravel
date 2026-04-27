@@ -1,0 +1,16 @@
+HTTP/2 302 
+cache-control: no-cache, private
+content-type: text/html; charset=utf-8
+date: Tue, 21 Apr 2026 13:48:09 GMT
+location: http://app.crontinel.com/login
+server: railway-edge
+set-cookie: XSRF-TOKEN=eyJpdiI6IkxobmdEcDl0a1liVjQ5ZkgwZlVyclE9PSIsInZhbHVlIjoidmNVTUowZyt1cjZJTlpIWW1UYWVaL1BlcCswKzNWbklla0ozSlc2MVN4aWJmOGNNREdyNW5KOHhJQzlhKytMcE1SOXNzcVA3T0JCK2I1Qm13UlE4QytHZ2lYYjJuOWhNWWcwbytVVHl3NTI2OEMyU1VkRGRiZ05NaXNKbi9kT0ciLCJtYWMiOiJlNzhkNjViNmYwNWUzZGZmNDVjZDk0NjI3NGZiYzMwNWM5YWVhYTQ5NTlkMDY5NmEyYWIzZDFhNDY0ZmRhNWUwIiwidGFnIjoiIn0%3D; expires=Tue, 21 Apr 2026 15:48:09 GMT; Max-Age=7199; path=/; samesite=lax
+set-cookie: laravel-session=eyJpdiI6IjdlZWhLMVlmSEtKSEhGUTNIN01IRVE9PSIsInZhbHVlIjoiVCtQSW9CSHdtTGVMZ1BjdU85WW1iNXN0OHVEQXBzR0EvejZmUE1maEdmbnNiMTVaa3d4OEdraHZYRVg3S01ZMjhLNTExcFh0N1FnbVVpRlpzMDBCYkpwNXdtNk9tL1UybDFNcjBpWGtXQ3oya2JZOFBud3lWbjVySXBxbUZDMWciLCJtYWMiOiIwNjA4NjZkMTFiZjA0ZTcwNzA2MTQ1NzJjNTZiMGIzMTA3OGRlODZkZWI5YTdmZjk5Y2MzMWEyZTI3MGEwOTI4IiwidGFnIjoiIn0%3D; expires=Tue, 21 Apr 2026 15:48:09 GMT; Max-Age=7199; path=/; httponly; samesite=lax
+x-powered-by: PHP/8.4.20
+x-railway-cdn-mode: full
+x-railway-edge: railway/asia-southeast1-eqsg3a
+x-railway-request-id: fFQQC9Z5TR6oTJVdAQeqjw
+x-cache-hits: 0
+x-cache: MISS
+x-served-by: cache-ccu830027-CCU
+

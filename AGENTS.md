@@ -101,45 +101,16 @@ Reactions are lightweight social signals. Humans use them constantly — they sa
 
 Skills provide your tools. When you need one, check its `SKILL.md`. Keep local notes (camera names, SSH details, voice preferences) in `TOOLS.md`.
 
-## Coding with acpx
+## 🚫 No acpx / cca — Use ccbot for Coding
 
-For coding tasks (building features, reviewing PRs, refactoring), use **acpx** — a headless CLI client for Claude Code that avoids PTY scraping problems. Claude Code is already running in the project root.
+**acpx and cca are explicitly prohibited by the owner.** Do NOT use acpx, cca, or any ACP harness sessions.
 
-**One-shot task:**
+**For coding tasks:** Use `ccbot` via exec — it's the preferred Claude Code wrapper:
 ```bash
-cd /Users/ray/Work/crontinel && acpx claude --cwd /Users/ray/Work/crontinel --format quiet --approve-all exec 'your task here'
+ccbot "your task here"
 ```
 
-**Persistent session (for multi-step work):**
-```bash
-cd /Users/ray/Work/crontinel && acpx claude --cwd /Users/ray/Work/crontinel --format quiet --approve-all 'build the feature'
-```
-
-**⚠️ ALWAYS use `--format quiet`.** The default text format floods the Telegram topic with session pings, thinking blocks, and tool calls. Quiet mode returns only the final result.
-
-**Key flags:**
-- `--cwd <dir>` — project directory (session scoped to this)
-- `--format quiet` — suppress streaming, return final output only
-- `--approve-all` — auto-approve all permission requests (no interactive prompts)
-- `--format json` — NDJSON event stream for automation
-
-**When to use acpx vs direct exec:**
-- Simple file edits: use the `write`/`edit` tools directly
-- Coding tasks needing file exploration: use `acpx claude exec`
-- Multi-step builds: use `acpx claude` (persistent session)
-
-** acpx is installed globally. Read its skill reference at `~/.nvm/versions/node/v22.16.0/lib/node_modules/openclaw/skills/acpx/SKILL.md` for full details.
-
-## Quick Trigger: `cca`
-
-When a message starts with `cca ` (Claude Code acpx), treat it as a signal to use acpx immediately without asking for confirmation. Run the task via acpx in **this project's directory** (`/Users/ray/Work/crontinel`) and report results back.
-
-Example:
-```
-cca build a feature flag service for the dashboard
-```
-
-This is a convenience shorthand — the agent decides when to use acpx for any coding/content task on its own, not just when `cca` is used.
+For multi-step work, open a `tmux` session and use ccbot there.
 
 **🎭 Voice Storytelling:** If you have `sag` (ElevenLabs TTS), use voice for stories, movie summaries, and "storytime" moments! Way more engaging than walls of text. Surprise people with funny voices.
 

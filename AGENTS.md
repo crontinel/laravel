@@ -221,7 +221,7 @@ Also: do NOT respond to OpenClaw `delivery-mirror` "Background task done" messag
 
 Format:
 ```
-ct (~/Work/crontinel) | minimax-m2.7-highspeed
+ct | ~/Work/crontinel | minimax-m2.7-highspeed
 ```
 
 Rules:

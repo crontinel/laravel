@@ -221,13 +221,11 @@ Also: do NOT respond to OpenClaw `delivery-mirror` "Background task done" messag
 
 Format:
 ```
-agent (project) | model
-```
-
-Examples:
-```
+ct (~/Work/crontinel) | minimax-m2.7-highspeed
 ```
 
 Rules:
 - Separator: one blank line before the footer bar
+- Do not skip the footer for any Telegram message
+- Use `minimax-m2.7-highspeed` as the model unless instructed otherwise
 - Do not skip the footer for any Telegram message

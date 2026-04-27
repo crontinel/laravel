@@ -119,10 +119,10 @@ Route **all coding, content writing, and reviews** to `@CrontinelOnM4AirCCBot` v
 <!-- openclaw-memory-promotion:memory:memory/2026-04-12.md:274:304 -->
 - - `wire:poll.30000ms` on Livewire dashboard ✅ - Onboarding dark theme confirmed: `OnboardingLayout` uses `bg-slate-950` ✅ ### App Code (crontinel/app — separate git repo) Drafted but NOT committed (app/ is its own git repo): - `onboarding/app.blade.php`: full timezone list + search filter (was committed to `feat/profile-gdpr-welcome-polish` branch) - `onboarding/install.blade.php`: "Test connection" button after scheduler step - App code committed from `app/` directory ✅ (per earlier session) ### OSS Repo (crontinel/crontinel = oss/) - Divergent history conflict with crontinel/laravel — leaving alone per user's instruction ### P0 Blockers (remaining) 1. Server provisioning: AWS or Railway (manual — user does this) 2. DNS: `app.crontinel.com` → Railway server A record (manual) 3. Stripe Price IDs + `STRIPE_WEBHOOK_SECRET` (needs dashboard access) 4. App Resend SMTP → needs access to `app/.env` 5. `@crontinel` npm org + publish `mcp-server` → needs npm account/org access 6. GitHub OAuth credentials (`GITHUB_CLIENT_ID` + `GITHUB_CLIENT_SECRET`) 7. `status.crontinel.com` → needs Gatus deployment on Railway + DNS
 
-### Packagist Token (REMEMBER)
+### Packagist Token
 - **Location:** `~/.openclaw/secrets/packagist.env`
-- **Token:** `PACKAGIST_TOKEN=***REMOVED***` | **User:** `harunrrayhan`
-- **IMPORTANT:** This is the PERSONAL account token — it CANNOT update org-owned packages (`crontinel/php`, `crontinel/laravel`) which are owned by the `crontinel` organization on Packagist. Webhook setup for org packages requires either an org account token or manual setup via Packagist UI.
+- **User:** `harunrrayhan`
+- **Note:** Personal account token — cannot update org-owned packages (`crontinel/php`, `crontinel/laravel`).
 - Both webhooks (`crontinel/php`, `crontinel/laravel`) return HTTP 403 due to secret mismatch — need manual re-setup.
 
 ### Railway

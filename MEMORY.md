@@ -78,4 +78,4 @@ All secrets in `~/.openclaw/secrets/ct.env` — NEVER in workspace files.
 ## Promoted From Short-Term Memory (2026-04-28)
 
 <!-- openclaw-memory-promotion:memory:memory/2026-04-22.md:404:406 -->
-- - Candidate: Possible Lasting Truths: ## Session Summary — 2026-04-13 Evening ### npm Published - `@crontinel/node@0.1.0` — github.com/crontinel/node - `@crontinel/mcp-server@0.2.0` — github.com/crontinel/mcp-server - Token used: `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` (from Harun) ### Per - confidence: 0.00 - evidence: memory/2026-04-18.md:369-371 [score=0.843 recalls=0 avg=0.620 source=memory/2026-04-22.md:318-320]
+- - Candidate: Possible Lasting Truths: ## Session Summary — 2026-04-13 Evening ### npm Published - `@crontinel/node@0.1.0` — github.com/crontinel/node - `@crontinel/mcp-server@0.2.0` — github.com/crontinel/mcp-server - Token used: `[REDACTED]` (from Harun) ### Per - confidence: 0.00 - evidence: memory/2026-04-18.md:369-371 [score=0.843 recalls=0 avg=0.620 source=memory/2026-04-22.md:318-320]

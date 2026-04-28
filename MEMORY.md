@@ -59,7 +59,7 @@
 
 ### PostHog (ERROR TRACKING)
 - Project created for Crontinel
-- Token: `[REDACTED]`
+- Token: `[REDACTED — NEVER COMMIT]`, store only in Railway env vars
 - Install on: landing (Astro) + app (Laravel)
 
 ### npm Packages

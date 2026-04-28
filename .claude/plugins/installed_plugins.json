@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "plugins": {
+    "telegram@claude-plugins-official": [
+      {
+        "scope": "project",
+        "installPath": "/Users/ray/.claude/plugins/cache/claude-plugins-official/telegram/0.0.6",
+        "version": "0.0.6",
+        "installedAt": "2026-04-27T12:00:00.000Z",
+        "lastUpdated": "2026-04-27T12:00:00.000Z",
+        "projectPath": "/Users/ray/Work/crontinel"
+      }
+    ]
+  }
+}

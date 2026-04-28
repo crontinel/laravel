@@ -11,6 +11,10 @@
 - **Coding/review:** Use `model=opus` for planning and reviews
 - **Coding/implementation:** Use faster model
 
+## 🤖 ctcc for Coding & Content
+**ALL coding, PR reviews, and content writing → mention @CrontinelOnM4AirCCBot in Telegram topic 6.**
+Do NOT do these tasks directly — always delegate to ctcc.
+
 ## Bot-to-Bot Routing
 - When `@CrontinelOnM4AirCCBot` mentions arrive from `@HarunsOpenClawMBA_bot`, lead response with `@HarunsOpenClawMBA_bot`
 
@@ -53,3 +57,25 @@
 
 ## Secrets
 All secrets in `~/.openclaw/secrets/ct.env` — NEVER in workspace files.
+
+## SEO & Marketing (as of 2026-04-27)
+- PR #56 merged ✅ — HTTP→HTTPS 301 + trailing slash canonical (no trailing slash)
+- `twitter:site` meta tag present ✅
+- Structured data comprehensive ✅
+- Landing redesign deployed ✅
+- GSC: 74 URLs in sitemap, ~10 indexed, URL Inspection API needs URL-prefix property (manual)
+- npm org `@crontinel` live ✅ — owner (crontinel2026), harunr developer
+- Onboarding loop bug fixed ✅ (PR #43 merged)
+
+### Remaining Tasks
+- GSC: submit all 74 URLs for indexing
+- Laravel directories: Twitter DM @laravelnews, laravel-news.com links
+- Reddit/HN: genuine "built this" story (not promo dump)
+- Product Hunt launch prep (~2-3 weeks out)
+- `reference/configuration.md` full config example
+- LTD/Pro pricing note on pricing.astro
+
+## Promoted From Short-Term Memory (2026-04-28)
+
+<!-- openclaw-memory-promotion:memory:memory/2026-04-22.md:404:406 -->
+- - Candidate: Possible Lasting Truths: ## Session Summary — 2026-04-13 Evening ### npm Published - `@crontinel/node@0.1.0` — github.com/crontinel/node - `@crontinel/mcp-server@0.2.0` — github.com/crontinel/mcp-server - Token used: `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` (from Harun) ### Per - confidence: 0.00 - evidence: memory/2026-04-18.md:369-371 [score=0.843 recalls=0 avg=0.620 source=memory/2026-04-22.md:318-320]

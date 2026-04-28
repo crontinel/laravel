@@ -13,6 +13,11 @@ SESSION_NAME="crontinel"
 AUTO_MODE=true
 BYPASS_PERMS=true
 
+# Use the real user home, not any project-local HOME that may have been inherited
+# (e.g. from an amazingplugins session that sets HOME=.../amazingplugins/.claude-home).
+# Wrong HOME → wrong plugin cache → Telegram plugin never spawns.
+REAL_HOME="$(eval echo ~"$USER")"
+
 # Project-local Telegram state (isolates this bot from other projects)
 export TELEGRAM_STATE_DIR="$SCRIPT_DIR/.claude/channels/telegram"
 mkdir -p "$TELEGRAM_STATE_DIR"
@@ -34,7 +39,7 @@ for arg in "$@"; do
 done
 
 # Build claude arguments
-CLAUDE_ARGS=(-c --channels plugin:telegram@claude-plugins-official)
+CLAUDE_ARGS=(-c --rc --channels plugin:telegram@claude-plugins-official)
 
 if [ "$BYPASS_PERMS" = true ]; then
     CLAUDE_ARGS+=(--dangerously-skip-permissions)
@@ -44,7 +49,9 @@ if [ "$AUTO_MODE" = true ]; then
     CLAUDE_ARGS+=(--enable-auto-mode)
 fi
 
-CLAUDE_CMD="TELEGRAM_STATE_DIR='$TELEGRAM_STATE_DIR' claude ${CLAUDE_ARGS[*]}"
+# Pin HOME to real home and clear any inherited TELEGRAM_BOT_TOKEN so the
+# plugin's server.ts reads the crontinel-specific token from .claude/channels/telegram/.env
+CLAUDE_CMD="HOME='$REAL_HOME' TELEGRAM_STATE_DIR='$TELEGRAM_STATE_DIR' env -u TELEGRAM_BOT_TOKEN claude ${CLAUDE_ARGS[*]}"
 
 echo "▶ claude.sh (crontinel)"
 echo "  tmux session       : $SESSION_NAME"

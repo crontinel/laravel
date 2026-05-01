@@ -80,24 +80,16 @@ All secrets in `~/.openclaw/secrets/ct.env` — NEVER in workspace files.
 - `twitter:site` meta tag present ✅
 - Structured data comprehensive ✅
 - Landing redesign deployed ✅
-- GSC: 74 URLs in sitemap, 0 indexed — ROOT CAUSE FOUND: blog post trailing-slash URLs have `noindex` meta tag
+- GSC: 74 URLs in sitemap, fix merged (removed `prerender=true` from 4 dynamic route files), re-indexing pending
 - npm org `@crontinel` live ✅ — owner (crontinel2026), harunr developer
 - Onboarding loop bug fixed ✅ (PR #43 merged)
 
-### GSC / Indexing Status (2026-05-01)
-- GSC property: `sc-domain:crontinel.com` (domain-scoped, NOT URL-prefix)
-- Service account only has `webmasters` scope, NOT `searchconsole` scope — URL Inspection API inaccessible programmatically
-- **Root bug**: blog post trailing-slash URLs (`/blog/post-slug/`) served with `<meta name="robots" content="noindex">` — blocking all 74 URLs from indexing
-- Non-trailing-slash blog URLs redirect (307) to trailing-slash versions, which have noindex
-- Fix in progress: ctcc investigating (see `ct-fix-noindex` subagent)
-- After fix: will need URL-prefix property added to GSC for URL Inspection API access, OR rely on sitemap crawl
-
 ### Remaining Tasks
-- [IN PROGRESS] Fix noindex on blog post trailing-slash URLs (ctcc investigating)
-- Reddit/HN: genuine "built this" story (not promo dump)
-- Product Hunt launch prep (~2-3 weeks out)
-- `reference/configuration.md` full config example
-- LTD/Pro pricing note on pricing.astro
+- [IN PROGRESS] PostHog full setup: flip `PUBLIC_POSTHOG_ENABLED=true` in wrangler.json when ready; set Railway env vars manually (Harun)
+- Reddit/HN: posts written, Harun to review and post
+- Product Hunt launch prep: doc at `landing/PRODUCTHUNT.md`
+- [IN PROGRESS] `reference/configuration.md` full config example (ctcc writing)
+- ~~LTD/Pro pricing note~~ ✅ Already on pricing.astro — "Lifetime deal" callout box + FAQ entry
 - ~~Laravel directories~~ (ON HOLD — Harun paused for 1+ month, 2026-05-01)
 
 ## Promoted From Short-Term Memory (2026-04-28)

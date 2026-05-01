@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "posthog-errors": {
+      "command": "node /Users/ray/Work/crontinel/mcposer-servers/posthog-errors/server.mjs"
+    }
+  }
+}

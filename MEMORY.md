@@ -63,6 +63,10 @@
 - App setup: `PostHog::init()` in `AppServiceProvider::boot()` + `ExceptionCapture` for auto error tracking
 - PostHogErrorTracker guarded with `class_exists` check (fails gracefully if package missing)
 - Verified working: test exception appeared in PostHog dashboard ✅
+- Personal API key (`phx_...`) saved in `~/.openclaw/secrets/ct.env` + `/Users/ray/Work/crontinel/.env` (gitignored)
+- MCP server: `/Users/ray/Work/crontinel/mcposer-servers/posthog-errors/server.mjs` — registered as `posthog-errors` in mcporter
+- To query errors: `mcporter call posthog-errors.list_errors(limit=20, period='7d')`
+- API: `GET /api/projects/401221/events/?event=$exception` (uses phx_ key)
 
 ### Stripe Staging Mode
 - `STRIPE_STAGING_MODE=true` active on Railway

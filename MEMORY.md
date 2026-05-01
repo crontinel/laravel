@@ -58,12 +58,11 @@
 - All `info@crontinel.com` mail forwards here
 
 ### PostHog (ERROR TRACKING)
-- Project created for Crontinel
-- Token: `[REDACTED — NEVER COMMIT]`, store only in Railway env vars
-- Install on: landing (Astro) + app (Laravel)
-- Landing: `PUBLIC_POSTHOG_ENABLED` toggle in `wrangler.json` — flip to `true` to go live
-- App: `POSTHOG_API_KEY`, `POSTHOG_HOST`, `POSTHOG_ERROR_TRACKING_ENABLED` vars needed in Railway (Harun to set)
+- App: `POSTHOG_API_KEY` (full key with suffix: `phc_...Z8kfP`), `POSTHOG_HOST` (`https://us.i.posthog.com`), `POSTHOG_ERROR_TRACKING_ENABLED` (`true`) — all set in Railway ✅
+- Landing: `PUBLIC_POSTHOG_ENABLED` toggle in `wrangler.json` — flip to `"true"` to go live
+- App setup: `PostHog::init()` in `AppServiceProvider::boot()` + `ExceptionCapture` for auto error tracking
 - PostHogErrorTracker guarded with `class_exists` check (fails gracefully if package missing)
+- Verified working: test exception appeared in PostHog dashboard ✅
 
 ### Stripe Staging Mode
 - `STRIPE_STAGING_MODE=true` active on Railway
@@ -99,13 +98,14 @@ All secrets in `~/.openclaw/secrets/ct.env` — NEVER in workspace files.
 - Onboarding loop bug fixed ✅ (PR #43 merged)
 
 ### Remaining Tasks
-- [IN PROGRESS] PostHog: set `POSTHOG_API_KEY`, `POSTHOG_HOST`, `POSTHOG_ERROR_TRACKING_ENABLED` in Railway env vars (Harun has the key)
+- [IN PROGRESS] PostHog landing: flip `PUBLIC_POSTHOG_ENABLED=true` in `wrangler.json` when ready to go live
 - Reddit/HN: posts written, Harun to review and post
 - Product Hunt launch prep: doc at `landing/PRODUCTHUNT.md`
 - ~~Stripe staging mode~~ ✅ Deployed and verified (PR #60 merged)
 - ~~GSC sitemap~~ ✅ Fix merged, re-indexing pending
 - ~~LTD/Pro pricing note~~ ✅ Already on pricing.astro — "Lifetime deal" callout box + FAQ entry
 - ~~Laravel directories~~ (ON HOLD — Harun paused for 1+ month, 2026-05-01)
+- ~~PostHog Railway~~ ✅ API key set, error tracking verified working
 
 ## Promoted From Short-Term Memory (2026-04-28)
 

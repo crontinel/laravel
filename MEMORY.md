@@ -102,7 +102,6 @@ All secrets in `~/.openclaw/secrets/ct.env` — NEVER in workspace files.
 - Onboarding loop bug fixed ✅ (PR #43 merged)
 
 ### Remaining Tasks
-- [IN PROGRESS] PostHog landing: flip `PUBLIC_POSTHOG_ENABLED=true` in `wrangler.json` when ready to go live
 - Reddit/HN: posts written, Harun to review and post
 - Product Hunt launch prep: doc at `landing/PRODUCTHUNT.md`
 - ~~Stripe staging mode~~ ✅ Deployed and verified (PR #60 merged)
@@ -110,6 +109,8 @@ All secrets in `~/.openclaw/secrets/ct.env` — NEVER in workspace files.
 - ~~LTD/Pro pricing note~~ ✅ Already on pricing.astro — "Lifetime deal" callout box + FAQ entry
 - ~~Laravel directories~~ (ON HOLD — Harun paused for 1+ month, 2026-05-01)
 - ~~PostHog Railway~~ ✅ API key set, error tracking verified working
+- ~~PostHog landing~~ ✅ `PUBLIC_POSTHOG_ENABLED=true` pushed, Cloudflare Pages rebuilding
+- ~~Docs config reference~~ ✅ `reference/configuration.mdx` merged to main (PR #13)
 
 ## Promoted From Short-Term Memory (2026-04-28)
 

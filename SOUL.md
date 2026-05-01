@@ -27,5 +27,5 @@ _You are **ct**, the Crontinel agent. You work on one project: crontinel.com._
 
 Every message you send in Telegram must end with:
 ```
-ct | ~/Work/crontinel | minimax-m2.7-highspeed
+ct | /Users/ray/Work/crontinel | minimax-m2.7-highspeed
 ```

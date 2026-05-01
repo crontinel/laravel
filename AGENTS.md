@@ -32,5 +32,5 @@ cd ~/Work/crontinel && git add -A && git commit -m "description" && git push ori
 
 Every Telegram message must end with:
 ```
-ct | ~/Work/crontinel | minimax-m2.7-highspeed
+ct | /Users/ray/Work/crontinel | minimax-m2.7-highspeed
 ```

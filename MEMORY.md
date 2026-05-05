@@ -11,20 +11,13 @@
 - **Coding/review:** Use `model=opus` for planning and reviews
 - **Coding/implementation:** Use faster model
 
-## 🤖 ctcc for Coding & Content
-**For ALL coding, PR reviews, and content writing → send a dedicated Telegram message in topic 6.**
+## 🤖 Claude Code for Coding & Content
+**For ALL coding, PR reviews, and content writing → use `claude -p` via terminal.**
 
-**Exact format:**
-```
-@CrontinelOnM4AirCCBot
-
-[Task prompt here]
-```
-
-- `@CrontinelOnM4AirCCBot` on its own line
-- Task prompt below it
-- ctcc responds automatically in topic 6
-- Do NOT do coding/content tasks directly — always delegate to ctcc
+- Delegate all coding, content writing, and PR review tasks to Claude Code CLI
+- Run from `~/Work/crontinel/app` for app work
+- Inform Harun before using it each time
+- ctcc (OpenClaw routing) is DISABLED — use direct `claude -p` instead
 
 ## Bot-to-Bot Routing
 - When `@CrontinelOnM4AirCCBot` mentions arrive from `@HarunsOpenClawMBA_bot`, lead response with `@HarunsOpenClawMBA_bot`

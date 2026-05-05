@@ -23,10 +23,11 @@ Secrets are in `~/.openclaw/secrets/ct.env`. Read from that file at runtime.
 
 ## Git Commit Rule
 
-After any change:
-```bash
-cd ~/Work/crontinel && git add -A && git commit -m "description" && git push origin main
-```
+Each sub-folder is its own git repo. Commit from the relevant sub-folder, NOT the workspace root:
+
+- App changes → `cd ~/Work/crontinel/app && git add -A && git commit -m "..." && git push origin main`
+- Landing changes → `cd ~/Work/crontinel/landing && git add -A && git commit -m "..." && git push origin main`
+- Workspace root (`~/Work/crontinel`) is a grouping repo — it does NOT track sub-folders
 
 ## Response Footer
 

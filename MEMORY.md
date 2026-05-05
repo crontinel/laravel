@@ -14,7 +14,13 @@
 ## 🤖 Claude Code for Coding & Content
 **For ALL coding, PR reviews, and content writing → use `claude -p` via terminal.**
 
-- Delegate all coding, content writing, and PR review tasks to Claude Code CLI
+**Workflow:**
+1. **PLAN** — Start with `claude -p --model opus` for thorough analysis and planning
+2. **IMPLEMENT** — Then use `claude -p --model sonnet` for faster implementation
+
+**Rules:**
+- Pass full context: file paths, current code, error messages, project conventions, constraints
+- More context = better output. Don't be stingy with background info.
 - Run from `~/Work/crontinel/app` for app work
 - Inform Harun before using it each time
 - ctcc (OpenClaw routing) is DISABLED — use direct `claude -p` instead

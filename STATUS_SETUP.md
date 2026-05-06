@@ -1,43 +1,32 @@
 # Crontinel Status Page Setup
 
-**Created:** 2026-04-10
-**Service:** Checkly (checklyhq.com)
-**Account:** harun.b13@gmail.com (signed in via GitHub)
-**Plan:** Team Trial (free tier)
+**Updated:** 2026-05-06
 
-## Status Page
+## Self-Hosted Gatus Status Page
 
-- **Public URL:** https://0j1trofn.checkly-status-page.com
-- **Status Page ID:** db2f86ed-d839-4e0d-9d5a-6e0d19eb1634
-- **Name:** Crontinel Status
+Self-hosted status page using Gatus. Configs in place:
+- `~/Work/crontinel/status/config.yaml` — monitoring endpoints
+- `~/Work/crontinel/status-page-tmp/config.yaml` — status page display config
 
-## Monitors
+**Infrastructure:** Pending decision (Hetzner VPS / Railway / Cloudflare Workers)
 
-| Monitor | Type | URL | Status |
-|---|---|---|---|
-| DNS Monitor - crontinel.com | DNS | crontinel.com | Passing |
-| URL Monitor - crontinel.com | URL | https://crontinel.com | Passing |
-| URL Monitor - docs.crontinel.com | URL | https://docs.crontinel.com | Passing |
+## Monitoring
 
-## Services
-
-| Service | Linked to card |
-|---|---|
-| crontinel.com | Website & Docs |
-| docs.crontinel.com | Website & Docs |
+Health check cron running every 15 min via Railway GraphQL (job `db16773e7f4e`):
+- Checks `app.crontinel.com` and `crontinel.com`
+- Auto-redeploys/restarts Railway service if either is down
 
 ## Custom Domain (status.crontinel.com)
 
-Custom domains for Checkly status pages require a paid plan. Options:
+Custom domain setup pending infrastructure decision. Three options:
 
-1. **Upgrade Checkly** to a paid plan that supports custom domains, then CNAME `status.crontinel.com` to their provided value
-2. **Use Cloudflare redirect rule** to redirect `status.crontinel.com` to `0j1trofn.checkly-status-page.com`
-3. **Switch to self-hosted Gatus** on Hetzner VPS when ready
-
-For now, the status page is live at the Checkly-hosted URL above.
+1. **Hetzner VPS** — deploy Gatus on self-managed VPS (option 3 from original plan)
+2. **Railway container** — run Gatus as a Railway service
+3. **Cloudflare Workers** — lightweight Cloudflare-hosted option
 
 ## TODO
 
-- [ ] Decide: upgrade Checkly or use redirect for status.crontinel.com
-- [ ] Link monitors to services (currently services exist but monitors are not formally linked to services in Checkly's service model)
-- [ ] Add app.crontinel.com monitor once SaaS is live
+- [ ] Decide infrastructure: Hetzner VPS vs Railway vs Cloudflare Workers
+- [ ] Deploy Gatus status page
+- [ ] Configure status.crontinel.com custom domain
+- [ ] Add app.crontinel.com to monitoring

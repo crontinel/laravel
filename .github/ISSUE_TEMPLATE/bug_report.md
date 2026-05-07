@@ -1,23 +1,31 @@
 ---
 name: Bug report
-about: Something isn't working as expected
+about: Report something that's not working correctly
+title: "[Bug] "
 labels: bug
+assignees: ""
 ---
 
 **Describe the bug**
-A clear description of what's wrong.
+A clear and concise description of what the bug is.
 
-**To reproduce**
-Steps to reproduce the behavior.
+**To Reproduce**
+Steps to reproduce the behavior:
+1. 
+2. 
+3. 
 
 **Expected behavior**
 What you expected to happen.
 
-**Environment**
-- PHP version:
-- Laravel version:
-- Crontinel package version:
-- Horizon version (if relevant):
+**Screenshots**
+If applicable, add screenshots to help explain the problem.
+
+**Environment:**
+- OS: [e.g. macOS, Linux]
+- PHP version: [e.g. 8.3]
+- Laravel version: [e.g. 12.x]
+- Crontinel package version: [e.g. 1.0.0]
 
 **Additional context**
-Any other relevant details, logs, or screenshots.
+Add any other context about the problem here.

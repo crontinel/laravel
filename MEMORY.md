@@ -172,3 +172,16 @@ All secrets in `~/.openclaw/secrets/ct.env` — NEVER in workspace files.
 - @CrontinelOnM4AirCCBot [score=0.881 recalls=0 avg=0.620 source=memory/2026-04-28.md:11-12]
 <!-- openclaw-memory-promotion:memory:memory/2026-04-28.md:13:13 -->
 - [task prompt here] [score=0.881 recalls=0 avg=0.620 source=memory/2026-04-28.md:13-13]
+
+## Promoted From Short-Term Memory (2026-05-06)
+
+<!-- openclaw-memory-promotion:memory:memory/2026-04-13.md:317:356 -->
+- - CI: `on: push: tags: [v*]` → `npm publish --access public` using `{{ secrets.NPM_TOKEN }}` - Org-level secret at github.com/organizations/crontinel/settings/secrets → all repos inherit ### Landing CTA Fix - All `/register` links on landing pointed to non-existent `crontinel.com/register` - Fixed: 14 files updated to `https://app.crontinel.com/register` - Build: clean ### Resend for App - `composer require resend/resend-laravel` — installed in app - Laravel already has `resend` mailer in `config/mail.php` - Production needs: `MAIL_MAILER=resend` + `RESEND_API_KEY` env vars ### Docs/Marketing Drafts Created - `docs/marketing/reddit-launch-post.md` - `docs/marketing/launch-email.md` - `docs/marketing/twitter-thread.md` ### CLI README Fix - `get.crontinel.com/install` → DNS doesn't exist - Changed to `https://raw.githubusercontent.com/crontinel/cli/main/install.sh` ### CLAUDE.md + CHANGELOG Created - `node/CLAUDE.md`, `node/CHANGELOG.md` - `mcp-server/CLAUDE.md`, `mcp-server/CHANGELOG.md` - `python/CLAUDE.md`, `python/CHANGELOG.md` - `go/CHANGELOG.md` - `rust/CHANGELOG.md` ### MCP SKILL.md Fixed - Hardcoded local paths → `npx -y @crontinel/mcp-server -- <command>` ### Non-Blocking Items Remaining - Laravel Magazine directory: needs account login to submit - `get.crontinel.com` DNS: doesn't exist, CLI install URL workaround applied - GSC: needs live site - PyPI: blocked on PyPI account creation - crates.io: GitHub OAuth only — no email/password possible - Packagist webhook: needs Packagist API token [score=0.907 recalls=7 avg=0.503 source=memory/2026-04-13.md:317-356]
+<!-- openclaw-memory-promotion:memory:memory/2026-04-28.md:16:16 -->
+- **ctcc does ALL coding and content tasks.** Never do them directly. [score=0.901 recalls=0 avg=0.620 source=memory/2026-04-28.md:16-16]
+<!-- openclaw-memory-promotion:memory:memory/2026-04-28.md:18:18 -->
+- **ctcc responses appear as inbound messages in this topic** — visible to me (ct agent) and relayable to Harun. [score=0.901 recalls=0 avg=0.620 source=memory/2026-04-28.md:18-18]
+<!-- openclaw-memory-promotion:memory:memory/2026-04-28.md:9:9 -->
+- **Format:** [score=0.891 recalls=0 avg=0.620 source=memory/2026-04-28.md:9-9]
+<!-- openclaw-memory-promotion:memory:memory/2026-04-28.md:11:11 -->
+- @CrontinelOnM4AirCCBot [score=0.891 recalls=0 avg=0.620 source=memory/2026-04-28.md:11-11]

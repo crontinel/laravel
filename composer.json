@@ -1,9 +1,9 @@
 {
     "name": "crontinel/laravel",
-    "description": "Laravel adapter for crontinel/php. Monitors Horizon internals, queue depth, and cron health — with dashboard, alerts, and SaaS reporting.",
+    "description": "Laravel-native cron, queue & Horizon monitoring. Detects silent Horizon supervisor death, queue bottlenecks, and cron failures — things generic uptime monitors can't see.",
     "type": "library",
     "license": "MIT",
-    "keywords": ["laravel", "queue", "horizon", "cron", "monitoring", "crontinel"],
+    "keywords": ["laravel", "horizon", "queue", "cron", "monitoring", "supervisor", "mcp", "laravel-native", "crontinel"],
     "homepage": "https://crontinel.com",
     "authors": [
         {

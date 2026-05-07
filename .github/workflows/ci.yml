@@ -31,6 +31,16 @@ jobs:
           php-version: ${{ matrix.php }}
           extensions: mbstring, sqlite3
           coverage: none
+          tools: composer@v2
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ matrix.php }}-${{ matrix.laravel }}-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            composer-${{ matrix.php }}-${{ matrix.laravel }}-
+            composer-${{ matrix.php }}-
 
       - name: Install dependencies
         run: |
@@ -52,6 +62,15 @@ jobs:
         with:
           php-version: '8.3'
           coverage: none
+          tools: composer@v2
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-lint-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            composer-lint-
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-interaction

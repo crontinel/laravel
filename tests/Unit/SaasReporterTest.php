@@ -50,6 +50,7 @@ it('sends completed status for zero exit code cron run', function () {
 
     Http::assertSent(function (Request $request) {
         $body = $request->data();
+
         return ($body['status'] ?? null) === 'completed'
             && ($body['command'] ?? null) === 'reports:generate'
             && ($body['exit_code'] ?? null) === 0;
@@ -72,6 +73,7 @@ it('sends failed status for non-zero exit code cron run', function () {
 
     Http::assertSent(function (Request $request) {
         $body = $request->data();
+
         return ($body['status'] ?? null) === 'failed'
             && ($body['exit_code'] ?? null) === 1;
     });
@@ -93,6 +95,7 @@ it('includes correct cron run fields in payload', function () {
 
     Http::assertSent(function (Request $request) {
         $body = $request->data();
+
         return ($body['command'] ?? null) === 'php artisan inspire'
             && ($body['duration_ms'] ?? null) === 42
             && ($body['output'] ?? null) === 'Laravel ipsum'

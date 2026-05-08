@@ -5,6 +5,11 @@ node_modules/
 .env
 .env.local
 
+# Logs
+*.log
+storage/logs/
+laravel/storage/logs/
+
 # Untracked project subdirectories
 docs/dist/
 docs/node_modules/

@@ -2,6 +2,7 @@ oss/
 landing/
 app/
 node_modules/
+vendor/
 .env
 .env.local
 

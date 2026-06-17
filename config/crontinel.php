@@ -83,9 +83,22 @@ return [
         ],
         'webhook' => [
             'url' => env('CRONTINEL_WEBHOOK_URL'),
-            // Auth headers as JSON: '{"Authorization": "Bearer token"}'
             'headers' => env('CRONTINEL_WEBHOOK_HEADERS'),
             'timeout' => env('CRONTINEL_WEBHOOK_TIMEOUT', 10),
         ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Agent Daemon (php artisan crontinel:agent)
+    |--------------------------------------------------------------------------
+    | Settings for the remote command execution agent that connects to the
+    | Crontinel SaaS via SSE to receive and execute commands.
+    */
+    'agent' => [
+        'enabled' => env('CRONTINEL_AGENT_ENABLED', false),
+        'heartbeat_interval' => 60,
+        'max_reconnect_delay' => 60,
+        'default_command_timeout' => 300,
     ],
 ];

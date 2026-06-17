@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Crontinel;
 
+use Crontinel\Commands\AgentCommand;
 use Crontinel\Commands\CheckCommand;
 use Crontinel\Commands\InstallCommand;
 use Crontinel\Commands\PruneCommand;
@@ -37,6 +38,7 @@ class CrontinelServiceProvider extends ServiceProvider
 
         if ($this->app->runningInConsole()) {
             $this->commands([
+                AgentCommand::class,
                 InstallCommand::class,
                 CheckCommand::class,
                 ReportCommand::class,

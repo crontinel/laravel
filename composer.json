@@ -1,6 +1,6 @@
 {
     "name": "crontinel/laravel",
-    "description": "Laravel-native cron, queue & Horizon monitoring. Detects silent Horizon supervisor death, queue bottlenecks, and cron failures — things generic uptime monitors can't see.",
+    "description": "Laravel SDK for Crontinel — cron, queue & Horizon monitoring for Laravel applications. Detects silent supervisor failures, queue bottlenecks, and missed cron runs.",
     "type": "library",
     "license": "MIT",
     "keywords": ["laravel", "horizon", "queue", "cron", "monitoring", "supervisor", "mcp", "laravel-native", "crontinel"],

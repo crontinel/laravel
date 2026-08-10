@@ -10,6 +10,8 @@ namespace Crontinel\Data;
 final class SseEvent
 {
     public string $event = '';
+
     public string $data = '';
+
     public string $id = '';
 }

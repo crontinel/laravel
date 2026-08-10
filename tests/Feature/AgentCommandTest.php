@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Crontinel\Data\SseEvent;
 use Crontinel\Services\AgentService;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -29,16 +28,16 @@ it('parses multiple SSE events in sequence', function () {
     $agent = new AgentService;
 
     $sseData = implode("\n", [
-        "event: ping",
-        "data: {}",
-        "",
-        "event: command",
+        'event: ping',
+        'data: {}',
+        '',
+        'event: command',
         'data: {"command_id":"xyz","command":"ls -la"}',
-        "",
-        "event: ping",
-        "data: {}",
-        "", // trailing blank line to close last event
-        "", // extra blank line (noop)
+        '',
+        'event: ping',
+        'data: {}',
+        '', // trailing blank line to close last event
+        '', // extra blank line (noop)
     ]);
 
     $agent->feedSseParser($sseData);
@@ -81,8 +80,8 @@ it('handles partial data across multiple feed calls', function () {
     $agent = new AgentService;
 
     $agent->feedSseParser("event: command\nda");
-    $agent->feedSseParser('ta: {"command_id":"p1",' . "\n");
-    $agent->feedSseParser('"command":"whoami"}' . "\n\n");
+    $agent->feedSseParser('ta: {"command_id":"p1",'."\n");
+    $agent->feedSseParser('"command":"whoami"}'."\n\n");
 
     $ref = new ReflectionClass($agent);
     $currentEvent = $ref->getProperty('currentEvent');

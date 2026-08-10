@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Corrected and normalized the SaaS API URL base and ingest paths so both `https://app.crontinel.com` and a custom `saas_url` (with or without a trailing `/api`) resolve correctly.
 
-## [0.3.0] — 2026-04-09
+## [0.3.0] — 2026-04-08
 
 ### Changed
 - **Package split**: Core monitoring logic was extracted into a new `crontinel/php` package. `crontinel/laravel` is now a thin Laravel adapter on top of it (requires `crontinel/php: ^0.1`).

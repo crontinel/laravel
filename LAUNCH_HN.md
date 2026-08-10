@@ -32,7 +32,7 @@ There's also a framework-agnostic PHP core (`crontinel/php`) if you're not on La
 
 The OSS package is the full product. There is an optional hosted SaaS (app.crontinel.com, early access) that adds team access, longer retention, and multi-app dashboards, but you don't need it. The local package does everything on its own.
 
-GitHub: https://github.com/crontinel/crontinel
+GitHub: https://github.com/crontinel/laravel
 Docs: https://docs.crontinel.com
 Site: https://crontinel.com
 

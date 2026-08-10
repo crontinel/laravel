@@ -64,7 +64,7 @@ Anyone running Laravel in production with scheduled tasks or queued jobs. Especi
 
 or
 
-[Self-host from GitHub](https://github.com/crontinel/crontinel) | [Read the docs](https://docs.crontinel.com)
+[Self-host from GitHub](https://github.com/crontinel/laravel) | [Read the docs](https://docs.crontinel.com)
 
 ---
 

@@ -65,6 +65,6 @@ I'd love feedback from anyone running Laravel in production. What monitoring gap
 ## Product Links
 
 - **Website:** https://crontinel.com
-- **GitHub:** https://github.com/crontinel/crontinel
+- **GitHub:** https://github.com/crontinel/laravel
 - **Docs:** https://docs.crontinel.com
 - **SaaS (early access):** https://app.crontinel.com

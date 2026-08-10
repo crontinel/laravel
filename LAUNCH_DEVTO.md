@@ -136,7 +136,7 @@ php artisan crontinel:install
 # visit /crontinel
 ```
 
-The repo is at [github.com/crontinel/crontinel](https://github.com/crontinel/crontinel). Stars and feedback are both welcome.
+The repo is at [github.com/crontinel/laravel](https://github.com/crontinel/laravel). Stars and feedback are both welcome.
 
 If you've been burned by silent cron failures or queue backups that nobody noticed, give it a shot. If something doesn't work or you want a feature, open an issue. I read all of them.
 

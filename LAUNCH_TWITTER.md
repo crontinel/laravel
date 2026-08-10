@@ -58,7 +58,7 @@ If you want alerts, multi-app views, and a managed dashboard, there's an optiona
 
 Give it a try and let us know what breaks.
 
-GitHub: https://github.com/crontinel/crontinel
+GitHub: https://github.com/crontinel/laravel
 Docs: https://docs.crontinel.com
 Site: https://crontinel.com
 

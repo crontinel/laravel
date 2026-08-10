@@ -12,10 +12,15 @@ use Symfony\Component\Process\Process;
 class AgentService
 {
     private const SSE_PATH = '/v1/agent/stream';
+
     private const COMMAND_RESULT_PATH = '/v1/agent/command/%s/result';
+
     private const HEARTBEAT_PATH = '/v1/agent/heartbeat';
+
     private const HEARTBEAT_INTERVAL = 60;
+
     private const MAX_RECONNECT_DELAY = 60;
+
     private const STREAM_SELECT_TIMEOUT = 1;
 
     /** Whether the agent should keep running. */
@@ -66,7 +71,7 @@ class AgentService
                 Log::error('Crontinel Agent: connection error', [
                     'error' => $e->getMessage(),
                 ]);
-                $this->writeOutput('Connection error: ' . $e->getMessage());
+                $this->writeOutput('Connection error: '.$e->getMessage());
             }
 
             if (! $this->running) {
@@ -109,6 +114,7 @@ class AgentService
 
         if (! $this->readResponseHeaders($fp)) {
             fclose($fp);
+
             return;
         }
 
@@ -126,13 +132,14 @@ class AgentService
         $parsed = parse_url($url);
         if ($parsed === false || ! isset($parsed['host'])) {
             Log::error('Crontinel Agent: invalid SSE URL', ['url' => $url]);
+
             return false;
         }
 
         $scheme = $parsed['scheme'] ?? 'https';
         $host = $parsed['host'];
         $port = $parsed['port'] ?? ($scheme === 'https' ? 443 : 80);
-        $path = ($parsed['path'] ?? '/') . (isset($parsed['query']) ? '?' . $parsed['query'] : '');
+        $path = ($parsed['path'] ?? '/').(isset($parsed['query']) ? '?'.$parsed['query'] : '');
         $transport = $scheme === 'https' ? 'ssl' : 'tcp';
 
         $remote = "{$transport}://{$host}:{$port}";
@@ -151,17 +158,18 @@ class AgentService
                 'code' => $errno,
             ]);
             $this->writeOutput("Socket connect failed: {$errstr} ({$errno})");
+
             return false;
         }
 
         $request = "GET {$path} HTTP/1.1\r\n"
-            . "Host: {$host}\r\n"
-            . "Authorization: Bearer {$this->apiKey()}\r\n"
-            . "Accept: text/event-stream\r\n"
-            . "Cache-Control: no-cache\r\n"
-            . "Connection: keep-alive\r\n"
-            . "User-Agent: crontinel-agent/1.0\r\n"
-            . "\r\n";
+            ."Host: {$host}\r\n"
+            ."Authorization: Bearer {$this->apiKey()}\r\n"
+            ."Accept: text/event-stream\r\n"
+            ."Cache-Control: no-cache\r\n"
+            ."Connection: keep-alive\r\n"
+            ."User-Agent: crontinel-agent/1.0\r\n"
+            ."\r\n";
 
         fwrite($fp, $request);
 
@@ -169,7 +177,7 @@ class AgentService
     }
 
     /**
-     * @param resource $fp
+     * @param  resource  $fp
      */
     private function readResponseHeaders($fp): bool
     {
@@ -177,15 +185,17 @@ class AgentService
         if ($statusLine === false) {
             $this->writeOutput('Connection closed while reading response.');
             Log::warning('Crontinel Agent: connection closed during response headers.');
+
             return false;
         }
 
         if (! preg_match('#^HTTP/\d\.\d\s+2\d{2}#', $statusLine)) {
-            $this->writeOutput("Unexpected response: " . trim($statusLine));
+            $this->writeOutput('Unexpected response: '.trim($statusLine));
             Log::warning('Crontinel Agent: non-200 response', ['status_line' => $statusLine]);
             while (($line = fgets($fp)) !== false && rtrim($line) !== '') {
                 // consume remaining headers
             }
+
             return false;
         }
 
@@ -198,7 +208,7 @@ class AgentService
     }
 
     /**
-     * @param resource $fp
+     * @param  resource  $fp
      */
     private function readSseStream($fp): void
     {
@@ -213,6 +223,7 @@ class AgentService
 
             if ($result === false) {
                 pcntl_signal_dispatch();
+
                 continue;
             }
 
@@ -221,6 +232,7 @@ class AgentService
                 if ($this->isHeartbeatDue()) {
                     $this->sendHeartbeat();
                 }
+
                 continue;
             }
 
@@ -253,6 +265,7 @@ class AgentService
             if ($line === '') {
                 $this->dispatchCurrentEvent();
                 $this->currentEvent = null;
+
                 continue;
             }
 
@@ -266,21 +279,21 @@ class AgentService
             switch ($field) {
                 case 'event':
                     if ($this->currentEvent === null) {
-                        $this->currentEvent = new SseEvent();
+                        $this->currentEvent = new SseEvent;
                     }
                     $this->currentEvent->event = $value;
                     break;
 
                 case 'data':
                     if ($this->currentEvent === null) {
-                        $this->currentEvent = new SseEvent();
+                        $this->currentEvent = new SseEvent;
                     }
                     $this->currentEvent->data .= $value;
                     break;
 
                 case 'id':
                     if ($this->currentEvent === null) {
-                        $this->currentEvent = new SseEvent();
+                        $this->currentEvent = new SseEvent;
                     }
                     $this->currentEvent->id = $value;
                     break;
@@ -316,6 +329,7 @@ class AgentService
         if (! is_array($payload) || ! isset($payload['command_id'], $payload['command'])) {
             Log::warning('Crontinel Agent: malformed command event', ['data' => $jsonData]);
             $this->writeOutput('Malformed command event received.');
+
             return;
         }
 
@@ -338,7 +352,7 @@ class AgentService
         try {
             $process->run();
             $exitCode = $process->getExitCode();
-            $output = $process->getOutput() . $process->getErrorOutput();
+            $output = $process->getOutput().$process->getErrorOutput();
             $finishedAt = now();
             $durationMs = (int) round((microtime(true) - $startMicro) * 1000);
             $status = $exitCode === 0 ? 'completed' : 'failed';
@@ -448,6 +462,7 @@ class AgentService
     {
         if (! function_exists('pcntl_signal')) {
             $this->writeOutput('pcntl extension not available — signal-based graceful shutdown disabled.');
+
             return;
         }
 
@@ -495,7 +510,7 @@ class AgentService
         if ($this->outputWriter !== null) {
             ($this->outputWriter)($formatted);
         } else {
-            echo $formatted . PHP_EOL;
+            echo $formatted.PHP_EOL;
         }
     }
 
@@ -509,6 +524,6 @@ class AgentService
         $base = rtrim(config('crontinel.saas_url', 'https://app.crontinel.com'), '/');
         $base = preg_replace('#/api/?$#', '', $base);
 
-        return $base . '/api' . $path;
+        return $base.'/api'.$path;
     }
 }

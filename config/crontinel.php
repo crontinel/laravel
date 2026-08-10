@@ -100,5 +100,20 @@ return [
         'heartbeat_interval' => 60,
         'max_reconnect_delay' => 60,
         'default_command_timeout' => 300,
+
+        /*
+        |----------------------------------------------------------------------
+        | Allowed Commands
+        |----------------------------------------------------------------------
+        | Commands received from the Crontinel SaaS are only executed if they
+        | match one of these patterns. Patterns are matched with fnmatch(),
+        | so "*" is a wildcard and any other string must match exactly.
+        |
+        | IMPORTANT: the default is an empty array, which means NO commands
+        | are permitted. This is a fail-closed default — you must explicitly
+        | opt in to the exact commands (or patterns) you want the agent to be
+        | able to run. An empty list is NOT "allow everything".
+        */
+        'allowed_commands' => [],
     ],
 ];

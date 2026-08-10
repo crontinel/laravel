@@ -64,7 +64,7 @@ class AgentCommand extends Command
         $this->line('After=network.target');
         $this->line('');
         $this->line('[Service]');
-        $this->line("Type=simple");
+        $this->line('Type=simple');
         $this->line("User={$user}");
         $this->line("WorkingDirectory={$appPath}");
         $this->line("ExecStart={$phpBinary} artisan crontinel:agent");

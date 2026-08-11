@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] — 2026-08-11
+
+### Security
+- **v0.4.0 and v0.4.1 were accidentally published with unrelated internal files bundled into the package tree** (developer tooling scripts, session artifacts, and browser profile data), due to a leaky monorepo checkout being tagged and pushed. This release contains no functional changes — it exists solely to give Composer users a clean version to upgrade to, since Packagist's version-immutability protection prevents overwriting already-published stable tags.
+- If you installed `v0.4.0` or `v0.4.1`, upgrade to `^0.4.2` and delete/reinstall your `vendor/crontinel/laravel` directory. Treat any credentials that may have been present in that tree as compromised and rotate them.
+
 ## [0.4.1] — 2026-06-25
 
 ### Fixed

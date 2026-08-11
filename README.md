@@ -13,6 +13,10 @@
 
 ---
 
+> ⚠️ **Security notice (2026-08-11):** v0.4.0 and v0.4.1 were accidentally published with unrelated internal files bundled in, including credential scripts. Upgrade to `^0.4.2` immediately and rotate any credentials from a `vendor/crontinel/laravel` tree installed before this date. See [CHANGELOG.md](CHANGELOG.md#042).
+
+---
+
 ## What it monitors
 
 | Monitor | What it sees |

@@ -8,8 +8,11 @@ use Crontinel\Data\CronStatus;
 use Crontinel\Monitors\CronMonitor;
 use Crontinel\Monitors\HorizonMonitor;
 use Crontinel\Monitors\QueueMonitor;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class SaasReporter
 {
@@ -66,7 +69,32 @@ class SaasReporter
         ?string $output,
         string $startedAt,
         string $finishedAt,
+        ?string $requestKey = null,
     ): void {
+        $this->sendCronPayload([
+            'request_key' => $requestKey ?? (string) Str::uuid(),
+            'command' => $command,
+            'exit_code' => $exitCode,
+            'duration_ms' => $durationMs,
+            'output' => $output,
+            'started_at' => $startedAt,
+            'finished_at' => $finishedAt,
+            'status' => $exitCode === 0 ? 'completed' : 'failed',
+        ]);
+    }
+
+    public function reportCronStarted(string $command, string $startedAt, string $requestKey): void
+    {
+        $this->sendCronPayload([
+            'request_key' => $requestKey,
+            'command' => $command,
+            'started_at' => $startedAt,
+            'status' => 'running',
+        ]);
+    }
+
+    private function sendCronPayload(array $payload): void
+    {
         if (! $this->isConfigured()) {
             return;
         }
@@ -74,17 +102,15 @@ class SaasReporter
         try {
             Http::withToken($this->apiKey())
                 ->timeout(10)
-                ->post($this->saasUrl('/v1/ingest/cron'), [
-                    'command' => $command,
-                    'exit_code' => $exitCode,
-                    'duration_ms' => $durationMs,
-                    'output' => $output,
-                    'started_at' => $startedAt,
-                    'finished_at' => $finishedAt,
-                    'status' => $exitCode === 0 ? 'completed' : 'failed',
-                ]);
+                ->retry(2, 100, fn (\Exception $e) => $e instanceof ConnectionException
+                    || ($e instanceof RequestException && $e->response->serverError()))
+                ->post($this->saasUrl('/v1/ingest/cron'), $payload)->throw();
         } catch (\Throwable $e) {
-            Log::warning('Crontinel: failed to report cron run to SaaS', ['error' => $e->getMessage()]);
+            try {
+                Log::warning('Crontinel: failed to report cron run to SaaS', ['exception' => $e::class]);
+            } catch (\Throwable) {
+                // Even a broken log channel must not fail the customer's task.
+            }
         }
     }
 

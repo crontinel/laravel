@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-24
+
+### Added
+- Stable request IDs for scheduled executions. Foreground start and terminal reports share an ID; new executions get new IDs.
+- One bounded retry for transport errors and HTTP 5xx responses, using the same request payload and ID.
+- An optional `requestKey` argument for callers that retransmit a cron report.
+
+### Fixed
+- Track starts by task instance rather than command name, avoiding collisions between overlapping tasks.
+- Report nonzero process exit codes as failures.
+- Report background tasks on `ScheduledBackgroundTaskFinished`, not at process launch. Background reporting is terminal-only; it doesn't detect a missing start or completion.
+- Keep local monitoring-storage and logging failures from failing the scheduled business task.
+
+Reports remain synchronous (10-second timeout per attempt, at most two attempts per report). This release doesn't add a persistent client-side spool. Upgrade the hosted server to the atomic keyed-ingest contract before relying on retransmission deduplication.
+
 ## [0.4.2] — 2026-08-11
 
 ### Security

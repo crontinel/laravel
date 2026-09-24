@@ -10,6 +10,7 @@ use Crontinel\Commands\InstallCommand;
 use Crontinel\Commands\PruneCommand;
 use Crontinel\Commands\ReportCommand;
 use Crontinel\Listeners\RecordScheduledTaskRun;
+use Illuminate\Console\Events\ScheduledBackgroundTaskFinished;
 use Illuminate\Console\Events\ScheduledTaskFailed;
 use Illuminate\Console\Events\ScheduledTaskFinished;
 use Illuminate\Console\Events\ScheduledTaskStarting;
@@ -75,10 +76,12 @@ class CrontinelServiceProvider extends ServiceProvider
         }
 
         $listener = RecordScheduledTaskRun::class;
+        $this->app->singleton($listener);
 
         Event::listen(ScheduledTaskStarting::class, [$listener, 'handleStarting']);
         Event::listen(ScheduledTaskFinished::class, [$listener, 'handleFinished']);
         Event::listen(ScheduledTaskFailed::class, [$listener, 'handleFailed']);
+        Event::listen(ScheduledBackgroundTaskFinished::class, [$listener, 'handleBackgroundFinished']);
     }
 
     private function registerSchedule(): void

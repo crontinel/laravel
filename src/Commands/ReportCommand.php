@@ -22,6 +22,10 @@ class ReportCommand extends Command
         }
 
         $reporter->reportStatus();
+        $reports = $reporter->flushCronReports();
+        if ($reports !== null) {
+            $this->line('Cron reports: '.json_encode($reports, JSON_THROW_ON_ERROR));
+        }
 
         $this->line('Status reported to crontinel.com.');
 

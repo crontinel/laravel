@@ -30,6 +30,12 @@ return [
     'saas_key' => env('CRONTINEL_API_KEY'),
     'saas_url' => env('CRONTINEL_API_URL', 'https://app.crontinel.com'),
 
+    // Opt-in disk-backed cron reports. Use persistent private local storage.
+    'reporting' => [
+        'durable' => env('CRONTINEL_DURABLE_REPORTING', false),
+        'spool_path' => env('CRONTINEL_REPORT_SPOOL_PATH', storage_path('app/crontinel-spool')),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Horizon Integration

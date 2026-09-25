@@ -6,6 +6,7 @@ namespace Crontinel;
 
 use Crontinel\Commands\AgentCommand;
 use Crontinel\Commands\CheckCommand;
+use Crontinel\Commands\FlushReportsCommand;
 use Crontinel\Commands\InstallCommand;
 use Crontinel\Commands\PruneCommand;
 use Crontinel\Commands\ReportCommand;
@@ -43,6 +44,7 @@ class CrontinelServiceProvider extends ServiceProvider
                 InstallCommand::class,
                 CheckCommand::class,
                 ReportCommand::class,
+                FlushReportsCommand::class,
                 PruneCommand::class,
             ]);
 

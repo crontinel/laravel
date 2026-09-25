@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Opt-in disk-backed cron reporting with `CRONTINEL_DURABLE_REPORTING=true`. Reports retain their run keys and timestamps across retries without doing HTTP in the scheduled business task.
+- Bounded background draining through `crontinel:report` and manual delivery counts through `crontinel:flush-reports`.
+- Private, atomic spool records with app/endpoint binding, retry backoff, 24-hour retention, a 12-attempt limit and bounded disk usage. Heartbeats remain live-only.
+
 ## [0.5.0] - 2026-09-24
 
 ### Added

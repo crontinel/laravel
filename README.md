@@ -154,6 +154,32 @@ Set `horizon.enabled = false` in config. Queue and cron monitoring work independ
 
 The OSS package works standalone. To get multi-app hosted dashboards, longer history, and team access, visit [crontinel.com](https://crontinel.com) to join the early access list.
 
+### Durable cron reporting
+
+To keep cron evidence through temporary network failures without making scheduled jobs wait for HTTP, opt in:
+
+```env
+CRONTINEL_DURABLE_REPORTING=true
+# Optional: a private persistent directory, outside the public web root
+CRONTINEL_REPORT_SPOOL_PATH=/var/lib/my-app/crontinel-spool
+```
+
+Rebuild Laravel's configuration cache after changing these values. The default directory is `storage/app/crontinel-spool`. Give the scheduler user write access. Use a separate directory per application on a local filesystem with working `flock` and atomic rename. Ephemeral container storage doesn't survive replacement; mount persistent storage if that matters for your deployment. All producers and the drainer must use the same path and OS user.
+
+Cron start/completion reports are written locally before delivery. The existing every-minute `crontinel:report` schedule drains them in its background process. You still need Laravel's scheduler running. No queue worker is required. Manually drain one batch with:
+
+```bash
+php artisan crontinel:flush-reports
+```
+
+The command prints sent, retried, discarded and pending counts, plus busy/error flags. A batch attempts at most 20 reports in a 20-second delivery window, with a maximum three-second HTTP timeout per attempt. Retry delays double from one minute to one hour. Each record gets at most 12 attempts and is retained for at most 24 hours; cleanup happens during a drain. Network errors, HTTP 5xx, 401, 403, 408 and 429 are retried. Other non-2xx responses are discarded with a redacted warning. Redirects aren't followed.
+
+The spool holds at most 1,000 records, each at most 64 KiB (roughly 64 MiB total, plus temporary files). Full storage, oversized payloads or an enqueue lock unavailable for 250 ms cause a report to be dropped with a warning. Monitoring storage/logging failures don't fail the scheduled business command. Delivery is bounded best-effort with at-least-once replay, not a guarantee against disk loss. Original request keys and execution timestamps survive retries; the hosted keyed-ingest contract deduplicates replays.
+
+Files are private to their owner but contain the reported command/output in plaintext. No API key is stored. Pending records are bound to the original normalized endpoint and a key fingerprint: changing the app key or host won't send old evidence to the new destination. Drain before rotating credentials where possible. Otherwise, records remain until the original configuration is restored or they expire. Turning durable mode off stops draining; retained files need a later drain or manual removal.
+
+Heartbeats aren't spooled or replayed. Durable delivery can delay cron alerts by the drain/retry interval. Background tasks still produce terminal-only reports; cross-process start/completion correlation is separate work. With durable mode off, cron reporting keeps its synchronous behavior: at most two 10-second attempts.
+
 ---
 
 ## License

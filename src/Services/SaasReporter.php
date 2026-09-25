@@ -99,6 +99,12 @@ class SaasReporter
             return;
         }
 
+        if (config('crontinel.reporting.durable', false)) {
+            app(CronReportSpool::class)->enqueue($payload, $this->saasUrl('/v1/ingest/cron'), $this->apiKey());
+
+            return;
+        }
+
         try {
             Http::withToken($this->apiKey())
                 ->timeout(10)
@@ -112,6 +118,15 @@ class SaasReporter
                 // Even a broken log channel must not fail the customer's task.
             }
         }
+    }
+
+    public function flushCronReports(): ?array
+    {
+        if (! $this->isConfigured() || ! config('crontinel.reporting.durable', false)) {
+            return null;
+        }
+
+        return app(CronReportSpool::class)->flush($this->saasUrl('/v1/ingest/cron'), $this->apiKey());
     }
 
     private function resolveOverallStatus(mixed $horizon, array $queues, array $crons): string

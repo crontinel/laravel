@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-25
+
 ### Added
 - Opt-in disk-backed cron reporting with `CRONTINEL_DURABLE_REPORTING=true`. Reports retain their run keys and timestamps across retries without doing HTTP in the scheduled business task.
 - Bounded background draining through `crontinel:report` and manual delivery counts through `crontinel:flush-reports`.

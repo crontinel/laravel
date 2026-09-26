@@ -68,6 +68,7 @@ return [
     */
     'cron' => [
         'enabled' => true,
+        'background_correlation' => env('CRONTINEL_BACKGROUND_CORRELATION', false),
         'late_alert_after_seconds' => 120,
         'retain_days' => 30,
     ],

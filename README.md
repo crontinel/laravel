@@ -178,7 +178,15 @@ The spool holds at most 1,000 records, each at most 64 KiB (roughly 64 MiB total
 
 Files are private to their owner but contain the reported command/output in plaintext. No API key is stored. Pending records are bound to the original normalized endpoint and a key fingerprint: changing the app key or host won't send old evidence to the new destination. Drain before rotating credentials where possible. Otherwise, records remain until the original configuration is restored or they expire. Turning durable mode off stops draining; retained files need a later drain or manual removal.
 
-Heartbeats aren't spooled or replayed. Durable delivery can delay cron alerts by the drain/retry interval. Background tasks still produce terminal-only reports; cross-process start/completion correlation is separate work. With durable mode off, cron reporting keeps its synchronous behavior: at most two 10-second attempts.
+Heartbeats aren't spooled or replayed. Durable delivery can delay cron alerts by the drain/retry interval. With durable mode off, cron reporting keeps its synchronous behavior: at most two 10-second attempts.
+
+### Background execution correlation
+
+Set `CRONTINEL_BACKGROUND_CORRELATION=true` to send start/completion pairs for `runInBackground()` tasks. Rebuild the configuration cache and restart long-running schedulers after changing it. Each launch carries its own UUID and original start time through the child process environment to Laravel's `schedule:finish`. Overlapping executions keep separate identities even when they finish out of order. The SDK restores the scheduler's previous environment after launch or launch failure. Task commands and Laravel's mutex names aren't rewritten.
+
+Starts are recorded after the overlap lock is acquired. Skipped background tasks don't emit a start. If the process dies before `schedule:finish`, the accepted start remains unfinished for the hosted runtime monitor to evaluate. Duration is wall-clock time from the start hook to the completion event, including reporting and completion-hook overhead.
+
+Tasks using `user()` retain terminal-only reporting because `sudo` may remove the environment. Missing or invalid inherited context also falls back to terminal-only reporting. Keep the application configuration and schedule definition stable while a task is running. Don't clear `CRONTINEL_SCHEDULE_CONTEXT` in the surrounding scheduler shell. Pair this setting with durable reporting to avoid HTTP waits at launch. Both features are opt-in.
 
 ---
 

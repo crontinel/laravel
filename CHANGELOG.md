@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-09-26
+
+### Added
+- Opt-in background execution correlation with `CRONTINEL_BACKGROUND_CORRELATION=true`. Per-launch environment context preserves UUIDs and start times across the real `schedule:finish` process.
+- Wall-clock duration for correlated background completions, overlap-skipped start suppression and scheduler environment restoration. Tasks using `user()` or missing context retain terminal-only reporting.
+
 ## [0.6.0] - 2026-09-25
 
 ### Added

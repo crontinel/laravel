@@ -16,6 +16,8 @@ class CronReportSpool
 
     private const RETENTION_SECONDS = 86400;
 
+    private const ENQUEUE_LOCK_WAIT_NANOSECONDS = 2_000_000_000;
+
     /** Persist before any network request. Never store a credential in the spool. */
     public function enqueue(array $payload, string $url, string $key): void
     {
@@ -181,7 +183,7 @@ class CronReportSpool
             throw new RuntimeException('Cannot lock spool');
         }
         chmod($path, 0600);
-        $deadline = hrtime(true) + ($wait ? 250_000_000 : 0);
+        $deadline = hrtime(true) + ($wait ? self::ENQUEUE_LOCK_WAIT_NANOSECONDS : 0);
         do {
             if (flock($file, LOCK_EX | LOCK_NB)) {
                 return $file;

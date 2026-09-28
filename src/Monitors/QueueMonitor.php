@@ -132,7 +132,13 @@ class QueueMonitor
 
             return $depths;
         } catch (\Throwable) {
-            return array_fill_keys($queues, 0);
+            // PhpRedis Cluster does not support the regular pipeline API.
+            $depths = [];
+            foreach ($queues as $queue) {
+                $depths[$queue] = $this->getRedisDepth($connection, $queue);
+            }
+
+            return $depths;
         }
     }
 
@@ -269,7 +275,13 @@ class QueueMonitor
 
             return $ages;
         } catch (\Throwable) {
-            return array_fill_keys($queues, null);
+            // Read individual slots when the Redis client cannot pipeline them.
+            $ages = [];
+            foreach ($queues as $queue) {
+                $ages[$queue] = $this->getRedisOldestJobAge($connection, $queue);
+            }
+
+            return $ages;
         }
     }
 

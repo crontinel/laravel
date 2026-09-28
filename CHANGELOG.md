@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.3] - 2026-09-28
+
+### Fixed
+- Read configured Redis Cluster queues individually when PhpRedis cannot pipeline them. This restores batch depth and oldest pending age in the SDK monitor.
+
 ## [0.7.2] - 2026-09-28
 
 ### Fixed

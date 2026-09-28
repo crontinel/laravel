@@ -20,7 +20,7 @@ class HorizonMonitor
             running: $masterStatus === 'running',
             supervisors: $supervisors,
             failedJobsPerMinute: $failedJobsPerMinute,
-            pausedAt: $masterStatus === 'paused' ? now() : null,
+            pausedAt: $masterStatus === 'paused' || collect($supervisors)->contains('status', 'paused') ? now() : null,
             failedJobsPerMinuteThreshold: (float) config('crontinel.horizon.failed_jobs_per_minute_threshold', 5),
         );
     }
@@ -29,15 +29,16 @@ class HorizonMonitor
     {
         try {
             $connection = $this->resolveHorizonConnection();
-            $masters = Redis::connection($connection)->smembers('horizon:masters');
+            // Horizon records active masters in a sorted set and refreshes their score.
+            $masters = Redis::connection($connection)->zrevrangebyscore('masters', '+inf', time() - 14);
             if (empty($masters)) {
                 return 'stopped';
             }
 
             $master = reset($masters);
-            $info = Redis::connection($connection)->hmget($master, ['status']);
+            $info = Redis::connection($connection)->hmget('master:'.$master, ['name', 'status']);
 
-            return $info[0] ?? 'unknown';
+            return array_values($info)[1] ?? 'unknown';
         } catch (\Throwable $e) {
             Log::warning('Crontinel: Could not reach Horizon Redis connection.', ['error' => $e->getMessage()]);
 
@@ -50,20 +51,23 @@ class HorizonMonitor
         try {
             $connection = $this->resolveHorizonConnection();
             $supervisors = [];
-            $keys = Redis::connection($connection)->keys('horizon:supervisors:*');
-            $prefix = (string) config('database.redis.options.prefix', '');
+            $names = Redis::connection($connection)->zrevrangebyscore('supervisors', '+inf', time() - 29);
 
-            foreach ($keys as $key) {
-                // Redis clients return physical keys, then prefix command arguments again.
-                if ($prefix !== '' && str_starts_with($key, $prefix)) {
-                    $key = substr($key, strlen($prefix));
+            foreach ($names as $name) {
+                $data = Redis::connection($connection)->hmget('supervisor:'.$name, ['name', 'status', 'processes', 'options']);
+                $data = array_values($data);
+                if (empty($data[0])) {
+                    continue;
                 }
-                $data = Redis::connection($connection)->hmget($key, ['name', 'status', 'processes', 'queue']);
+
+                $processes = json_decode((string) ($data[2] ?? ''), true);
+                $options = json_decode((string) ($data[3] ?? ''), true);
+                $queues = (array) ($options['queue'] ?? ['default']);
                 $supervisors[] = [
-                    'name' => $data[0] ?? $key,
+                    'name' => $data[0],
                     'status' => $data[1] ?? 'unknown',
-                    'processes' => (int) ($data[2] ?? 0),
-                    'queue' => $data[3] ?? 'default',
+                    'processes' => is_array($processes) ? array_sum(array_map('intval', $processes)) : 0,
+                    'queue' => implode(',', $queues),
                 ];
             }
 
@@ -79,10 +83,10 @@ class HorizonMonitor
     {
         try {
             $connection = $this->resolveHorizonConnection();
-            $key = 'horizon:failed_jobs_per_minute';
-            $value = Redis::connection($connection)->get($key);
+            // Horizon scores failed jobs with the negative failure timestamp.
+            $now = microtime(true);
 
-            return (float) ($value ?? 0);
+            return (float) Redis::connection($connection)->zcount('failed_jobs', -$now, -($now - 60));
         } catch (\Throwable) {
             return 0.0;
         }

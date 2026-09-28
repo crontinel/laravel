@@ -14,7 +14,7 @@ it('counts reserved Redis jobs in direct and discovered queue depth', function (
     $connection->shouldReceive('llen')->once()->with('queues:default')->andReturn(1);
     $connection->shouldReceive('zcard')->once()->with('queues:default:delayed')->andReturn(2);
     $connection->shouldReceive('zcard')->once()->with('queues:default:reserved')->andReturn(3);
-    $connection->shouldReceive('lindex')->once()->with('queues:default', -1)->andReturn(null);
+    $connection->shouldReceive('lindex')->once()->with('queues:default', 0)->andReturn(null);
 
     $connection->shouldReceive('pipeline')->twice()->andReturnUsing(function ($callback) {
         static $calls = 0;
@@ -28,7 +28,7 @@ it('counts reserved Redis jobs in direct and discovered queue depth', function (
             return [1, 2, 3];
         }
 
-        $pipe->shouldReceive('lindex')->once()->with('queues:default', -1);
+        $pipe->shouldReceive('lindex')->once()->with('queues:default', 0);
         $callback($pipe);
 
         return [null];

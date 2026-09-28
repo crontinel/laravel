@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Read live Horizon master and supervisor records from their sorted sets and hashes using Horizon's Redis connection, including paused state and recent failed jobs.
+- Measure Redis queue wait age from the oldest pending job and support Laravel's `createdAt` payload field.
+
 ## [0.7.1] - 2026-09-28
 
 ### Fixed

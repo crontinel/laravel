@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Crontinel\Monitors;
 
 use Crontinel\Data\QueueStatus;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Queue\QueueManager;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -62,7 +63,7 @@ class QueueMonitor
     {
         try {
             return match ($driver) {
-                'database' => DB::table('jobs')->where('queue', $queue)->count(),
+                'database' => $this->databaseJobs($connection)->where('queue', $queue)->count(),
                 'redis' => $this->getRedisDepth($connection, $queue),
                 default => 0,
             };
@@ -82,7 +83,7 @@ class QueueMonitor
 
         try {
             return match ($driver) {
-                'database' => $this->batchDatabaseDepths($queues),
+                'database' => $this->batchDatabaseDepths($connection, $queues),
                 'redis' => $this->batchRedisDepths($connection, $queues),
                 default => array_fill_keys($queues, 0),
             };
@@ -94,9 +95,9 @@ class QueueMonitor
     /**
      * @return array<string, int>
      */
-    private function batchDatabaseDepths(array $queues): array
+    private function batchDatabaseDepths(string $connection, array $queues): array
     {
-        $rows = DB::table('jobs')
+        $rows = $this->databaseJobs($connection)
             ->whereIn('queue', $queues)
             ->select('queue', DB::raw('COUNT(*) as count'))
             ->groupBy('queue')
@@ -186,7 +187,7 @@ class QueueMonitor
     {
         try {
             return match ($driver) {
-                'database' => $this->getDatabaseOldestJobAge($queue),
+                'database' => $this->getDatabaseOldestJobAge($connection, $queue),
                 'redis' => $this->getRedisOldestJobAge($connection, $queue),
                 default => null,
             };
@@ -206,7 +207,7 @@ class QueueMonitor
 
         try {
             return match ($driver) {
-                'database' => $this->batchDatabaseOldestJobAges($queues),
+                'database' => $this->batchDatabaseOldestJobAges($connection, $queues),
                 'redis' => $this->batchRedisOldestJobAges($connection, $queues),
                 default => array_fill_keys($queues, null),
             };
@@ -218,10 +219,10 @@ class QueueMonitor
     /**
      * @return array<string, int|null>
      */
-    private function batchDatabaseOldestJobAges(array $queues): array
+    private function batchDatabaseOldestJobAges(string $connection, array $queues): array
     {
         // Single query: get oldest created_at per queue
-        $rows = DB::table('jobs')
+        $rows = $this->databaseJobs($connection)
             ->whereIn('queue', $queues)
             ->select('queue', DB::raw('MIN(created_at) as oldest_at'))
             ->groupBy('queue')
@@ -231,7 +232,7 @@ class QueueMonitor
         $result = [];
         foreach ($queues as $queue) {
             if (isset($rows[$queue])) {
-                $result[$queue] = (int) now()->diffInSeconds($rows[$queue]);
+                $result[$queue] = max(0, time() - (int) $rows[$queue]);
             } else {
                 $result[$queue] = null;
             }
@@ -275,14 +276,14 @@ class QueueMonitor
         }
     }
 
-    private function getDatabaseOldestJobAge(string $queue): ?int
+    private function getDatabaseOldestJobAge(string $connection, string $queue): ?int
     {
-        $oldest = DB::table('jobs')
+        $oldest = $this->databaseJobs($connection)
             ->where('queue', $queue)
             ->orderBy('created_at')
             ->value('created_at');
 
-        return $oldest ? now()->diffInSeconds($oldest) : null;
+        return $oldest ? max(0, time() - (int) $oldest) : null;
     }
 
     private function getRedisOldestJobAge(string $connection, string $queue): ?int
@@ -317,7 +318,7 @@ class QueueMonitor
 
         try {
             if ($driver === 'database') {
-                $queues = DB::table('jobs')->distinct()->pluck('queue')->all();
+                $queues = $this->databaseJobs($connection)->distinct()->pluck('queue')->all();
 
                 return ! empty($queues) ? $queues : ['default'];
             }
@@ -339,5 +340,13 @@ class QueueMonitor
         }
 
         return ['default'];
+    }
+
+    private function databaseJobs(string $connection): Builder
+    {
+        $database = config("queue.connections.{$connection}.connection");
+        $table = config("queue.connections.{$connection}.table", 'jobs');
+
+        return DB::connection($database)->table($table);
     }
 }

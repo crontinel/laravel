@@ -112,6 +112,8 @@ return [
 ];
 ```
 
+For Redis Cluster, set `queues.watch` to the queue names you use. Automatic key discovery has not been verified across cluster nodes.
+
 ### Environment variables
 
 ```env

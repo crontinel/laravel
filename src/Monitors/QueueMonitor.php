@@ -118,14 +118,16 @@ class QueueMonitor
                 foreach ($queues as $queue) {
                     $pipe->llen("queues:{$queue}");
                     $pipe->zcard("queues:{$queue}:delayed");
+                    $pipe->zcard("queues:{$queue}:reserved");
                 }
             });
             $depths = [];
 
             foreach ($queues as $i => $queue) {
-                $pending = (int) ($results[$i * 2] ?? 0);
-                $delayed = (int) ($results[$i * 2 + 1] ?? 0);
-                $depths[$queue] = $pending + $delayed;
+                $pending = (int) ($results[$i * 3] ?? 0);
+                $delayed = (int) ($results[$i * 3 + 1] ?? 0);
+                $reserved = (int) ($results[$i * 3 + 2] ?? 0);
+                $depths[$queue] = $pending + $delayed + $reserved;
             }
 
             return $depths;
@@ -141,8 +143,9 @@ class QueueMonitor
 
             $pending = (int) Redis::connection($redisConnection)->llen("queues:{$queue}");
             $delayed = (int) Redis::connection($redisConnection)->zcard("queues:{$queue}:delayed");
+            $reserved = (int) Redis::connection($redisConnection)->zcard("queues:{$queue}:reserved");
 
-            return $pending + $delayed;
+            return $pending + $delayed + $reserved;
         } catch (\Throwable) {
             return 0;
         }

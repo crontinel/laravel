@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-09-28
+
+### Fixed
+- Read database queue depth and oldest-job age from the queue's configured connection and table.
+- Count reserved Redis jobs in queue depth, matching Laravel's queue size.
+- Read Horizon supervisor hashes when Redis keys use a prefix.
+- Wait up to two seconds for a contended durable report spool lock before dropping a report. This affects only opt-in durable reporting under storage contention.
+
 ## [0.7.0] - 2026-09-26
 
 ### Added

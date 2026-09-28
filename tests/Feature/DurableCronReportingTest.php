@@ -159,6 +159,36 @@ it('persists concurrent producer processes for a subsequent drainer', function (
     expect(array_unique($keys))->toHaveCount(40);
 });
 
+it('waits through a brief contended enqueue lock rather than dropping a report', function () {
+    if (! function_exists('pcntl_fork')) {
+        $this->markTestSkipped('Process acceptance requires pcntl');
+    }
+    mkdir($this->spool, 0700);
+    $ready = $this->spool.'/lock-ready';
+    $pid = pcntl_fork();
+    if ($pid === -1) {
+        throw new RuntimeException('Cannot fork lock holder');
+    }
+    if ($pid === 0) {
+        $lock = fopen($this->spool.'/enqueue.lock', 'c');
+        flock($lock, LOCK_EX);
+        file_put_contents($ready, 'ready');
+        usleep(450000);
+        flock($lock, LOCK_UN);
+        fclose($lock);
+        exit(0);
+    }
+    for ($i = 0; $i < 1000 && ! is_file($ready); $i++) {
+        usleep(1000);
+    }
+    expect(is_file($ready))->toBeTrue();
+    durableRun('held-lock');
+    pcntl_waitpid($pid, $status);
+
+    expect(pcntl_wexitstatus($status))->toBe(0)
+        ->and(glob($this->spool.'/*.json'))->toHaveCount(1);
+});
+
 it('exposes bounded delivery counts through the manual command', function () {
     durableRun();
     Http::fake(['*' => Http::response([], 200)]);

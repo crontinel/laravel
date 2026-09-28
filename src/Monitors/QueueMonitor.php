@@ -114,14 +114,12 @@ class QueueMonitor
     {
         try {
             $redisConnection = config("queue.connections.{$connection}.connection", 'default');
-            $pipe = Redis::connection($redisConnection)->pipeline();
-
-            foreach ($queues as $queue) {
-                $pipe->llen("queues:{$queue}");
-                $pipe->zcard("queues:{$queue}:delayed");
-            }
-
-            $results = $pipe->exec();
+            $results = Redis::connection($redisConnection)->pipeline(function ($pipe) use ($queues) {
+                foreach ($queues as $queue) {
+                    $pipe->llen("queues:{$queue}");
+                    $pipe->zcard("queues:{$queue}:delayed");
+                }
+            });
             $depths = [];
 
             foreach ($queues as $i => $queue) {
@@ -248,13 +246,11 @@ class QueueMonitor
     {
         try {
             $redisConnection = config("queue.connections.{$connection}.connection", 'default');
-            $pipe = Redis::connection($redisConnection)->pipeline();
-
-            foreach ($queues as $queue) {
-                $pipe->lindex("queues:{$queue}", -1);
-            }
-
-            $results = $pipe->exec();
+            $results = Redis::connection($redisConnection)->pipeline(function ($pipe) use ($queues) {
+                foreach ($queues as $queue) {
+                    $pipe->lindex("queues:{$queue}", -1);
+                }
+            });
 
             $ages = [];
             foreach ($queues as $i => $queue) {
@@ -326,8 +322,10 @@ class QueueMonitor
             if ($driver === 'redis') {
                 $redisConnection = config("queue.connections.{$connection}.connection", 'default');
                 $keys = Redis::connection($redisConnection)->keys('queues:*');
+                $prefix = (string) config('database.redis.options.prefix', '');
 
                 $queues = collect($keys)
+                    ->map(fn ($key) => str_starts_with((string) $key, $prefix) ? substr((string) $key, strlen($prefix)) : (string) $key)
                     ->map(fn ($key) => preg_replace('/^queues:(.+?)(:delayed|:reserved)?$/', '$1', $key))
                     ->unique()
                     ->filter(fn ($q) => ! str_contains((string) $q, ':'))

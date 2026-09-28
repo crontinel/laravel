@@ -251,7 +251,7 @@ class QueueMonitor
             $redisConnection = config("queue.connections.{$connection}.connection", 'default');
             $results = Redis::connection($redisConnection)->pipeline(function ($pipe) use ($queues) {
                 foreach ($queues as $queue) {
-                    $pipe->lindex("queues:{$queue}", -1);
+                    $pipe->lindex("queues:{$queue}", 0);
                 }
             });
 
@@ -264,9 +264,7 @@ class QueueMonitor
                     continue;
                 }
 
-                $payload = json_decode($raw, true);
-                $pushedAt = $payload['pushedAt'] ?? null;
-                $ages[$queue] = $pushedAt ? (int) (time() - (int) $pushedAt) : null;
+                $ages[$queue] = $this->pendingRedisPayloadAge($raw);
             }
 
             return $ages;
@@ -289,19 +287,24 @@ class QueueMonitor
     {
         try {
             $redisConnection = config("queue.connections.{$connection}.connection", 'default');
-            $raw = Redis::connection($redisConnection)->lindex("queues:{$queue}", -1);
+            $raw = Redis::connection($redisConnection)->lindex("queues:{$queue}", 0);
 
             if (! $raw) {
                 return null;
             }
 
-            $payload = json_decode($raw, true);
-            $pushedAt = $payload['pushedAt'] ?? null;
-
-            return $pushedAt ? (int) (time() - (int) $pushedAt) : null;
+            return $this->pendingRedisPayloadAge($raw);
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    private function pendingRedisPayloadAge(string $raw): ?int
+    {
+        $payload = json_decode($raw, true);
+        $createdAt = $payload['createdAt'] ?? $payload['pushedAt'] ?? null;
+
+        return is_numeric($createdAt) ? max(0, time() - (int) $createdAt) : null;
     }
 
     /**

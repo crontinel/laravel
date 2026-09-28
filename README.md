@@ -25,6 +25,8 @@
 | **Queues** | Depth per queue, failed count, oldest job age — Redis and database drivers |
 | **Cron jobs** | Every scheduled command run: exit code, duration, late detection |
 
+For Redis queues, depth includes pending, delayed, and reserved jobs, matching Laravel's queue size. Oldest job age measures the oldest **pending** job waiting for a worker; it is unknown when only delayed or reserved jobs remain.
+
 ---
 
 ## Requirements

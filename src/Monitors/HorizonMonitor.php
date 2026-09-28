@@ -51,8 +51,13 @@ class HorizonMonitor
             $connection = $this->resolveHorizonConnection();
             $supervisors = [];
             $keys = Redis::connection($connection)->keys('horizon:supervisors:*');
+            $prefix = (string) config('database.redis.options.prefix', '');
 
             foreach ($keys as $key) {
+                // Redis clients return physical keys, then prefix command arguments again.
+                if ($prefix !== '' && str_starts_with($key, $prefix)) {
+                    $key = substr($key, strlen($prefix));
+                }
                 $data = Redis::connection($connection)->hmget($key, ['name', 'status', 'processes', 'queue']);
                 $supervisors[] = [
                     'name' => $data[0] ?? $key,

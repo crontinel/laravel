@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Wait for the hosted ingest API's `Retry-After` delay before replaying a throttled durable cron report.
+- Discard a monthly allowance rejection with a redacted warning when its reset is beyond the durable spool's 24-hour retention.
 
 ## [0.7.3] - 2026-09-28
 

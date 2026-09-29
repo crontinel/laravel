@@ -81,6 +81,33 @@ it('honors Retry-After before replaying a throttled cron report', function () {
     Http::assertSentCount(2);
 });
 
+it('discards a typed monthly allowance rejection with an operator warning', function () {
+    durableRun();
+    Log::spy();
+    Http::fakeSequence()->push([
+        'code' => 'ingest_monthly_allowance_exhausted',
+        'accepted' => false,
+        'resets_at' => now()->addMonth()->toIso8601String(),
+    ], 429, ['Retry-After' => '2592000']);
+
+    expect(app(SaasReporter::class)->flushCronReports())->toMatchArray([
+        'sent' => 0, 'retried' => 0, 'discarded' => 1, 'pending' => 0,
+    ]);
+    Http::assertSentCount(1);
+    Log::shouldHaveReceived('warning')->with('Crontinel: cron report spool', ['reason' => 'monthly_allowance_exhausted']);
+});
+
+it('retries a monthly allowance rejection when the reset fits within spool retention', function () {
+    durableRun();
+    Http::fakeSequence()
+        ->push(['code' => 'ingest_monthly_allowance_exhausted', 'accepted' => false], 429, ['Retry-After' => '180'])
+        ->push(['ok' => true], 200);
+
+    expect(app(SaasReporter::class)->flushCronReports())->toMatchArray(['retried' => 1, 'pending' => 1]);
+    $this->travel(181)->seconds();
+    expect(app(SaasReporter::class)->flushCronReports())->toMatchArray(['sent' => 1, 'pending' => 0]);
+});
+
 it('expires stale reports and corrupt records without sending them', function () {
     durableRun();
     file_put_contents($this->spool.'/corrupt.json', '{not json');

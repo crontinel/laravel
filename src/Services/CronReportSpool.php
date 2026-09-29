@@ -104,8 +104,16 @@ class CronReportSpool
                     }
                     if ($response->status() === 429) {
                         $retryAfter = $response->header('Retry-After');
-                        if (is_string($retryAfter) && preg_match('/^[1-9][0-9]{0,4}$/', $retryAfter)
-                            && (int) $retryAfter <= self::RETENTION_SECONDS) {
+                        $withinRetention = is_string($retryAfter) && preg_match('/^[1-9][0-9]{0,4}$/', $retryAfter)
+                            && (int) $retryAfter <= self::RETENTION_SECONDS;
+                        if ($response->json('code') === 'ingest_monthly_allowance_exhausted'
+                            && $response->json('accepted') === false && ! $withinRetention) {
+                            // A month-long pause cannot fit in this bounded 24-hour spool.
+                            $this->discard($path, 'monthly_allowance_exhausted', $result);
+
+                            continue;
+                        }
+                        if ($withinRetention) {
                             $record['next_attempt_at'] = max($record['next_attempt_at'], now()->timestamp + (int) $retryAfter);
                             $this->write($path, $record);
                         }

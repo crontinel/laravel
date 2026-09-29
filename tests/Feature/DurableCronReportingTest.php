@@ -64,6 +64,23 @@ it('retries server failures throttles and temporary authorization errors but dis
     ]);
 })->with([[503, true], [429, true], [408, true], [401, true], [403, true], [422, false], [409, false], [302, false]]);
 
+it('honors Retry-After before replaying a throttled cron report', function () {
+    durableRun();
+    Http::fakeSequence()->push([], 429, ['Retry-After' => '180'])->push(['ok' => true], 200);
+
+    expect(app(SaasReporter::class)->flushCronReports())->toMatchArray(['retried' => 1, 'pending' => 1]);
+    $record = json_decode(file_get_contents(glob($this->spool.'/*.json')[0]), true);
+    expect($record['next_attempt_at'])->toBeGreaterThanOrEqual(now()->timestamp + 180);
+
+    $this->travel(61)->seconds();
+    expect(app(SaasReporter::class)->flushCronReports())->toMatchArray(['sent' => 0, 'pending' => 1]);
+    Http::assertSentCount(1);
+
+    $this->travel(120)->seconds();
+    expect(app(SaasReporter::class)->flushCronReports())->toMatchArray(['sent' => 1, 'pending' => 0]);
+    Http::assertSentCount(2);
+});
+
 it('expires stale reports and corrupt records without sending them', function () {
     durableRun();
     file_put_contents($this->spool.'/corrupt.json', '{not json');

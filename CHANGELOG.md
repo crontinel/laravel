@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Wait for the hosted ingest API's `Retry-After` delay before replaying a throttled durable cron report.
+
 ## [0.7.3] - 2026-09-28
 
 ### Fixed

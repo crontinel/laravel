@@ -102,6 +102,14 @@ class CronReportSpool
 
                         continue;
                     }
+                    if ($response->status() === 429) {
+                        $retryAfter = $response->header('Retry-After');
+                        if (is_string($retryAfter) && preg_match('/^[1-9][0-9]{0,4}$/', $retryAfter)
+                            && (int) $retryAfter <= self::RETENTION_SECONDS) {
+                            $record['next_attempt_at'] = max($record['next_attempt_at'], now()->timestamp + (int) $retryAfter);
+                            $this->write($path, $record);
+                        }
+                    }
                     if (! $response->serverError() && ! in_array($response->status(), [401, 403, 408, 429], true)) {
                         $this->discard($path, 'rejected', $result);
 

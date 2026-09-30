@@ -6,10 +6,16 @@ on:
   pull_request:
     branches: [main]
 
+# Cancel superseded pull request checks without interrupting main branch runs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
     name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     strategy:
       fail-fast: false
@@ -67,6 +73,7 @@ jobs:
   lint:
     name: Lint (Pint)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v4

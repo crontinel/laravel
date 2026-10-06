@@ -49,6 +49,19 @@ That's it. Visit `/crontinel` in your browser.
 
 **Cron run tracking is automatic** — Crontinel listens to Laravel's `ScheduledTaskFinished` and `ScheduledTaskFailed` events. No wrapping or modification of your scheduled commands needed.
 
+## Business result
+
+Exit code 0 means the process finished. It does not mean the work happened. Record the count or artifact time inside the job. Crontinel sends that on the terminal receipt and omits it when you record nothing. A monitoring error does not fail the job.
+
+```php
+use Crontinel\Outcome;
+
+Outcome::metric('processed_records', $count);
+Outcome::timestamp('latest_artifact', $backup->toIso8601String());
+```
+
+Zero is a real value. Use a timestamp with a timezone, such as `2026-10-06T12:00:00Z`. Background tasks need `CRONTINEL_BACKGROUND_CORRELATION=true` so the count survives the child process.
+
 ---
 
 ## CLI health check

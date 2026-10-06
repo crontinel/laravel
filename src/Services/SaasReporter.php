@@ -70,8 +70,9 @@ class SaasReporter
         string $startedAt,
         string $finishedAt,
         ?string $requestKey = null,
+        ?array $outcomes = null,
     ): void {
-        $this->sendCronPayload([
+        $payload = [
             'request_key' => $requestKey ?? (string) Str::uuid(),
             'command' => $command,
             'exit_code' => $exitCode,
@@ -80,7 +81,12 @@ class SaasReporter
             'started_at' => $startedAt,
             'finished_at' => $finishedAt,
             'status' => $exitCode === 0 ? 'completed' : 'failed',
-        ]);
+        ];
+        $clean = OutcomeBuffer::normalize($outcomes);
+        if ($clean !== null) {
+            $payload['outcomes'] = $clean;
+        }
+        $this->sendCronPayload($payload);
     }
 
     public function reportCronStarted(string $command, string $startedAt, string $requestKey): void

@@ -6,6 +6,7 @@ namespace Crontinel\Listeners;
 
 use Crontinel\Models\CronRun;
 use Crontinel\Services\BackgroundRunContext;
+use Crontinel\Services\OutcomeBuffer;
 use Crontinel\Services\SaasReporter;
 use Illuminate\Console\Events\ScheduledBackgroundTaskFinished;
 use Illuminate\Console\Events\ScheduledTaskFailed;
@@ -66,6 +67,7 @@ class RecordScheduledTaskRun
         $this->safely(function () use ($event) {
             $run = ['key' => (string) Str::uuid(), 'start' => now()->toIso8601String()];
             $this->runs[$event->task] = $run;
+            app(OutcomeBuffer::class)->open($run['key']);
             app(SaasReporter::class)->reportCronStarted($this->resolveCommand($event->task), $run['start'], $run['key']);
         });
     }
@@ -126,6 +128,7 @@ class RecordScheduledTaskRun
             $this->safely(fn () => CronRun::record($command, $exitCode, $durationMs, $output));
             app(SaasReporter::class)->reportCronRun(
                 $command, $exitCode, $durationMs, $output, $run['start'], $run['finished'], $run['key'],
+                app(OutcomeBuffer::class)->close($run['key']),
             );
         });
     }

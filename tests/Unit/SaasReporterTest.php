@@ -34,6 +34,29 @@ it('sends cron run to /v1/ingest/cron', function () {
     });
 });
 
+it('keeps exit zero completed when the business count is zero', function () {
+    config(['crontinel.saas_key' => 'test-api-key']);
+    config(['crontinel.saas_url' => 'https://app.crontinel.com/api']);
+    Http::fake(['*' => Http::response(['ok' => true], 200)]);
+
+    makeReporter()->reportCronRun(
+        command: 'reports:generate',
+        exitCode: 0,
+        durationMs: 150,
+        output: null,
+        startedAt: '2026-04-25T10:00:00Z',
+        finishedAt: '2026-04-25T10:00:01Z',
+        outcomes: ['metrics' => ['processed_records' => 0]],
+    );
+
+    Http::assertSent(function (Request $request) {
+        $body = $request->data();
+
+        return ($body['status'] ?? null) === 'completed'
+            && ($body['outcomes']['metrics']['processed_records'] ?? null) === 0;
+    });
+});
+
 it('sends completed status for zero exit code cron run', function () {
     config(['crontinel.saas_key' => 'test-api-key']);
     config(['crontinel.saas_url' => 'https://app.crontinel.com/api']);

@@ -11,6 +11,7 @@ use Crontinel\Commands\InstallCommand;
 use Crontinel\Commands\PruneCommand;
 use Crontinel\Commands\ReportCommand;
 use Crontinel\Listeners\RecordScheduledTaskRun;
+use Crontinel\Services\OutcomeBuffer;
 use Illuminate\Console\Events\ScheduledBackgroundTaskFinished;
 use Illuminate\Console\Events\ScheduledTaskFailed;
 use Illuminate\Console\Events\ScheduledTaskFinished;
@@ -25,6 +26,7 @@ class CrontinelServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/crontinel.php', 'crontinel');
+        $this->app->singleton(OutcomeBuffer::class);
     }
 
     public function boot(): void

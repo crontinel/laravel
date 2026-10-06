@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Crontinel\Commands\PruneCommand;
 use Crontinel\Listeners\RecordScheduledTaskRun;
 use Crontinel\Models\CronRun;
+use Crontinel\Outcome;
 use Crontinel\Services\SaasReporter;
 use Illuminate\Console\Events\ScheduledBackgroundTaskFinished;
 use Illuminate\Console\Events\ScheduledTaskFailed;
@@ -97,6 +98,42 @@ it('keeps identities separate for overlapping instances of the same command', fu
         ->and($bodies[0]['started_at'])->toBe($bodies[3]['started_at']);
     $listener->handleStarting(new ScheduledTaskStarting($first));
     expect(Http::recorded()->last()[0]['request_key'])->not->toBe($bodies[0]['request_key']);
+});
+
+it('reports a zero count on a completed schedule run', function () {
+    config(['crontinel.saas_key' => 'test-key']);
+    Http::fake();
+    $task = makeScheduledEvent('reports:generate');
+    $task->runInBackground = false;
+    $listener = app(RecordScheduledTaskRun::class);
+    $listener->handleStarting(new ScheduledTaskStarting($task));
+    Outcome::metric('processed_records', 0);
+    $task->exitCode = 0;
+    $listener->handleFinished(new ScheduledTaskFinished($task, 0.1));
+
+    Http::assertSent(function ($request) {
+        $body = $request->data();
+
+        return ($body['status'] ?? null) === 'completed'
+            && ($body['exit_code'] ?? null) === 0
+            && ($body['outcomes']['metrics']['processed_records'] ?? null) === 0;
+    });
+});
+
+it('omits outcomes when the job records nothing', function () {
+    config(['crontinel.saas_key' => 'test-key']);
+    Http::fake();
+    $task = makeScheduledEvent('reports:generate');
+    $task->runInBackground = false;
+    $listener = app(RecordScheduledTaskRun::class);
+    $listener->handleStarting(new ScheduledTaskStarting($task));
+    $listener->handleFinished(new ScheduledTaskFinished($task, 0.1));
+
+    Http::assertSent(function ($request) {
+        $body = $request->data();
+
+        return ($body['status'] ?? null) === 'completed' && ! array_key_exists('outcomes', $body);
+    });
 });
 
 it('uses the actual nonzero exit code from a finished command', function () {

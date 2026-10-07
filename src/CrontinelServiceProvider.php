@@ -10,6 +10,7 @@ use Crontinel\Commands\FlushReportsCommand;
 use Crontinel\Commands\InstallCommand;
 use Crontinel\Commands\PruneCommand;
 use Crontinel\Commands\ReportCommand;
+use Crontinel\Commands\ScheduleCommand;
 use Crontinel\Listeners\RecordScheduledTaskRun;
 use Crontinel\Services\OutcomeBuffer;
 use Illuminate\Console\Events\ScheduledBackgroundTaskFinished;
@@ -46,6 +47,7 @@ class CrontinelServiceProvider extends ServiceProvider
                 InstallCommand::class,
                 CheckCommand::class,
                 ReportCommand::class,
+                ScheduleCommand::class,
                 FlushReportsCommand::class,
                 PruneCommand::class,
             ]);

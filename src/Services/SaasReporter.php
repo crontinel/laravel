@@ -62,6 +62,21 @@ class SaasReporter
         }
     }
 
+    public function reportSchedule(array $tasks): void
+    {
+        if (! $this->isConfigured() || $tasks === []) {
+            return;
+        }
+
+        Http::withToken($this->apiKey())
+            ->timeout(10)
+            ->post($this->saasUrl('/v1/ingest/schedule'), [
+                'source' => 'laravel_schedule',
+                'tasks' => $tasks,
+            ])
+            ->throw();
+    }
+
     public function reportCronRun(
         string $command,
         int $exitCode,

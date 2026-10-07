@@ -54,7 +54,9 @@ class RecordScheduledTaskRun
                             $run = $this->background->begin($event->task);
                             if ($run !== null) {
                                 $this->runs[$event->task] = $run;
-                                app(SaasReporter::class)->reportCronStarted($this->resolveCommand($event->task), $run['start'], $run['key']);
+                                app(SaasReporter::class)->reportCronStarted(
+                                    $this->resolveCommand($event->task), $run['start'], $run['key'], $this->identity($event->task),
+                                );
                             }
                         });
                     });
@@ -68,7 +70,9 @@ class RecordScheduledTaskRun
             $run = ['key' => (string) Str::uuid(), 'start' => now()->toIso8601String()];
             $this->runs[$event->task] = $run;
             app(OutcomeBuffer::class)->open($run['key']);
-            app(SaasReporter::class)->reportCronStarted($this->resolveCommand($event->task), $run['start'], $run['key']);
+            app(SaasReporter::class)->reportCronStarted(
+                $this->resolveCommand($event->task), $run['start'], $run['key'], $this->identity($event->task),
+            );
         });
     }
 
@@ -129,6 +133,7 @@ class RecordScheduledTaskRun
             app(SaasReporter::class)->reportCronRun(
                 $command, $exitCode, $durationMs, $output, $run['start'], $run['finished'], $run['key'],
                 app(OutcomeBuffer::class)->close($run['key']),
+                $this->identity($task),
             );
         });
     }
@@ -149,5 +154,24 @@ class RecordScheduledTaskRun
     private function resolveCommand(mixed $task): string
     {
         return $task->command ?? $task->description ?? (string) $task;
+    }
+
+    private function identity(mixed $task): array
+    {
+        $identity = [];
+        $description = $task->description ?? null;
+        if (is_string($description) && trim($description) !== '') {
+            $identity['job_name'] = trim($description);
+        }
+        $expression = $task->expression ?? null;
+        if (is_string($expression) && trim($expression) !== '') {
+            $identity['expression'] = trim($expression);
+        }
+        $environments = $task->environments ?? [];
+        if (is_array($environments) && count($environments) === 1 && is_string($environments[0]) && trim($environments[0]) !== '') {
+            $identity['environment'] = trim($environments[0]);
+        }
+
+        return $identity;
     }
 }

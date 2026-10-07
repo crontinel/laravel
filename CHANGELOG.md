@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Record a business result on a scheduled run with `Outcome::metric()` and `Outcome::timestamp()`. Exit code 0 still means the process finished. A zero count is sent when the job records it. A run that records nothing omits `outcomes`.
+- Send `job_name` from `Schedule::name()`, plus `expression` and a single `environment`, so a renamed command or a `Schedule::call` closure can keep a stable name.
 
 ## [0.7.4] - 2026-09-29
 

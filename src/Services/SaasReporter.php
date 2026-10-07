@@ -71,6 +71,7 @@ class SaasReporter
         string $finishedAt,
         ?string $requestKey = null,
         ?array $outcomes = null,
+        ?array $identity = null,
     ): void {
         $payload = [
             'request_key' => $requestKey ?? (string) Str::uuid(),
@@ -86,17 +87,18 @@ class SaasReporter
         if ($clean !== null) {
             $payload['outcomes'] = $clean;
         }
+        $payload = array_merge($payload, $this->cleanIdentity($identity));
         $this->sendCronPayload($payload);
     }
 
-    public function reportCronStarted(string $command, string $startedAt, string $requestKey): void
+    public function reportCronStarted(string $command, string $startedAt, string $requestKey, ?array $identity = null): void
     {
-        $this->sendCronPayload([
+        $this->sendCronPayload(array_merge([
             'request_key' => $requestKey,
             'command' => $command,
             'started_at' => $startedAt,
             'status' => 'running',
-        ]);
+        ], $this->cleanIdentity($identity)));
     }
 
     private function sendCronPayload(array $payload): void
@@ -133,6 +135,23 @@ class SaasReporter
         }
 
         return app(CronReportSpool::class)->flush($this->saasUrl('/v1/ingest/cron'), $this->apiKey());
+    }
+
+    private function cleanIdentity(?array $identity): array
+    {
+        $clean = [];
+        foreach (['job_name' => 255, 'environment' => 100, 'expression' => 100] as $field => $limit) {
+            $value = $identity[$field] ?? null;
+            if (! is_string($value)) {
+                continue;
+            }
+            $value = trim($value);
+            if ($value !== '') {
+                $clean[$field] = mb_substr($value, 0, $limit);
+            }
+        }
+
+        return $clean;
     }
 
     private function resolveOverallStatus(mixed $horizon, array $queues, array $crons): string

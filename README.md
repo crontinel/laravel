@@ -62,6 +62,17 @@ Outcome::timestamp('latest_artifact', $backup->toIso8601String());
 
 Zero is a real value. Use a timestamp with a timezone, such as `2026-10-06T12:00:00Z`. Background tasks need `CRONTINEL_BACKGROUND_CORRELATION=true` so the count survives the child process.
 
+Give the schedule a name when the command string can change, including a closure:
+
+```php
+$schedule->command('reports:send')->dailyAt('02:00')->environments('production')->name('nightly-import');
+$schedule->call(function () {
+    // the job
+})->daily()->name('nightly-import');
+```
+
+The receipt keeps the command and also sends `job_name`, `environment` when only one environment is set, and `expression`. A hosted rule that stores that job name still applies after the command string changes.
+
 ---
 
 ## CLI health check

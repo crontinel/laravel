@@ -176,6 +176,49 @@ it('keeps reporting if the local monitoring table is unavailable', function () {
     Http::assertSentCount(1);
 });
 
+it('sends a stable job name when the command string is different', function () {
+    config(['crontinel.saas_key' => 'test-key']);
+    Http::fake();
+    $task = makeScheduledEvent('reports:send');
+    $task->description = 'nightly-import';
+    $task->expression = '0 2 * * *';
+    $task->environments = ['production'];
+    $task->runInBackground = false;
+    $listener = app(RecordScheduledTaskRun::class);
+    $listener->handleStarting(new ScheduledTaskStarting($task));
+    $listener->handleFinished(new ScheduledTaskFinished($task, 0.1));
+
+    Http::assertSent(function ($request) {
+        $body = $request->data();
+
+        return ($body['command'] ?? null) === 'reports:send'
+            && ($body['job_name'] ?? null) === 'nightly-import'
+            && ($body['environment'] ?? null) === 'production'
+            && ($body['expression'] ?? null) === '0 2 * * *';
+    });
+});
+
+it('sends the closure name when the scheduled call has no command', function () {
+    config(['crontinel.saas_key' => 'test-key']);
+    Http::fake();
+    $task = makeScheduledEvent('unused');
+    $task->command = null;
+    $task->description = 'nightly-import';
+    $task->expression = '0 0 * * *';
+    $task->environments = [];
+    $task->runInBackground = false;
+    $listener = app(RecordScheduledTaskRun::class);
+    $listener->handleFinished(new ScheduledTaskFinished($task, 0.1));
+
+    Http::assertSent(function ($request) {
+        $body = $request->data();
+
+        return ($body['command'] ?? null) === 'nightly-import'
+            && ($body['job_name'] ?? null) === 'nightly-import'
+            && ! array_key_exists('environment', $body);
+    });
+});
+
 function makeScheduledEvent(string $command): Event
 {
     $mock = Mockery::mock(Event::class);

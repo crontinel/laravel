@@ -73,6 +73,12 @@ $schedule->call(function () {
 
 The receipt keeps the command and also sends `job_name`, `environment` when only one environment is set, and `expression`. A hosted rule that stores that job name still applies after the command string changes.
 
+Name that schedule in Crontinel with one command. It lists the tasks, skips Crontinel's own reporter, and asks for the `processed_records` minimum that means the run counted. Pass `--minimum` when the shell is not interactive.
+
+```bash
+php artisan crontinel:schedule --minimum=1
+```
+
 ---
 
 ## CLI health check

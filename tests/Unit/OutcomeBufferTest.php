@@ -63,3 +63,34 @@ it('reads a background count from the schedule context file', function () {
         putenv(BackgroundRunContext::VARIABLE);
     }
 });
+
+it('keeps explicit output for the open run, truncated to the first 10,000 characters', function () {
+    $buffer = new OutcomeBuffer;
+    $key = (string) Str::uuid();
+    $buffer->open($key);
+    $buffer->output(str_repeat('é', 10_005));
+
+    $output = $buffer->close($key)['output'];
+    expect(mb_strlen($output))->toBe(10_000)
+        ->and(mb_check_encoding($output, 'UTF-8'))->toBeTrue();
+});
+
+it('keeps the tail when clipping captured output and repairs a split character', function () {
+    $clipped = OutcomeBuffer::clip(substr('é', 1).str_repeat('a', 10_000).'end', true);
+
+    expect(mb_strlen($clipped))->toBe(10_000)
+        ->and($clipped)->toEndWith('end')
+        ->and(mb_check_encoding(OutcomeBuffer::clip(substr('é', 1).'ok'), 'UTF-8'))->toBeTrue();
+});
+
+it('reads background output from the schedule context file', function () {
+    $key = (string) Str::uuid();
+    putenv(BackgroundRunContext::VARIABLE.'='.base64_encode(json_encode(['key' => $key], JSON_THROW_ON_ERROR)));
+    try {
+        (new OutcomeBuffer)->output('42 invoices sent');
+
+        expect((new OutcomeBuffer)->close($key))->toBe(['output' => '42 invoices sent']);
+    } finally {
+        putenv(BackgroundRunContext::VARIABLE);
+    }
+});

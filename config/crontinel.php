@@ -69,6 +69,9 @@ return [
     'cron' => [
         'enabled' => true,
         'background_correlation' => env('CRONTINEL_BACKGROUND_CORRELATION', false),
+        // Send the last 10,000 characters of a task's output file (sendOutputTo, appendOutputTo,
+        // storeOutput). Off by default because output may hold sensitive data.
+        'capture_output' => env('CRONTINEL_CAPTURE_OUTPUT', false),
         'late_alert_after_seconds' => 120,
         'retain_days' => 30,
     ],

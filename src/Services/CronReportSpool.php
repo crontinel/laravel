@@ -168,7 +168,7 @@ class CronReportSpool
 
     private function write(string $path, array $record): void
     {
-        $json = json_encode($record, JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE);
+        $json = json_encode($record, JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_UNICODE);
         if (strlen($json) > self::MAX_BYTES) {
             throw new RuntimeException('Report exceeds spool limit');
         }

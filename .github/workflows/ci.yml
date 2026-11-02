@@ -58,6 +58,8 @@ jobs:
 
       - name: Install dependencies
         run: |
+          # Every Laravel 11 release now carries a security advisory; Composer blocks them by default.
+          if [ "${{ matrix.laravel }}" = "11.*" ]; then composer config audit.block-insecure false; fi
           composer require --dev "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" "pestphp/pest:${{ matrix.pest }}" "pestphp/pest-plugin-laravel:${{ matrix.pest }}" --no-interaction --no-update
           composer update --prefer-stable --prefer-dist --no-interaction
 

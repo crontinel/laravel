@@ -62,6 +62,30 @@ Outcome::timestamp('latest_artifact', $backup->toIso8601String());
 
 Zero is a real value. Use a timestamp with a timezone, such as `2026-10-06T12:00:00Z`. Background tasks need `CRONTINEL_BACKGROUND_CORRELATION=true` so the count survives the child process.
 
+An AI agent job can report its spend with the same call. The hosted app checks these names against an agent ceiling:
+
+```php
+Outcome::metric('tokens_used', $usage->totalTokens);
+Outcome::metric('cost_usd', 0.42);
+Outcome::metric('tool_calls', 17);
+```
+
+### Run output
+
+Successful runs send no output unless you choose to. Set the text for the run yourself:
+
+```php
+Outcome::output("Sent 42 invoices, skipped 3 with no email.");
+```
+
+It goes on the terminal receipt only and is cut to the first 10,000 characters. A failed run keeps the exception message and adds this text after it. Background tasks need `CRONTINEL_BACKGROUND_CORRELATION=true` for it, the same as metrics.
+
+Or send the task's output file. Set `CRONTINEL_CAPTURE_OUTPUT=true` and give the task a file with `sendOutputTo()`, `appendOutputTo()` or `storeOutput()`. At the end of the run Crontinel reads the last 10,000 characters of that file and sends them. This also works for `runInBackground()` tasks. `Outcome::output()` wins when both are set. A missing or unreadable file sends the receipt without output. With `appendOutputTo()` the tail can include earlier runs.
+
+Capture is off by default because command output can hold customer data or secrets. Turn it on only for tasks whose output you are willing to store in Crontinel.
+
+The hosted app's AI quality check grades this output. That check is opt-in per job in the hosted app; sending output does not turn it on.
+
 Give the schedule a name when the command string can change, including a closure:
 
 ```php
@@ -157,6 +181,9 @@ CRONTINEL_ALERT_EMAIL=ops@yourcompany.com
 
 # SaaS reporting (optional)
 CRONTINEL_API_KEY=your-api-key
+
+# Send the tail of a scheduled task's output file (default false)
+CRONTINEL_CAPTURE_OUTPUT=false
 ```
 
 ---

@@ -94,3 +94,20 @@ it('reads background output from the schedule context file', function () {
         putenv(BackgroundRunContext::VARIABLE);
     }
 });
+
+it('keeps background output in app storage, readable by the owner only', function () {
+    $key = (string) Str::uuid();
+    putenv(BackgroundRunContext::VARIABLE.'='.base64_encode(json_encode(['key' => $key], JSON_THROW_ON_ERROR)));
+    try {
+        (new OutcomeBuffer)->output('secret report');
+        $path = storage_path('framework/crontinel-outcomes/'.$key.'.json');
+
+        expect(is_file($path))->toBeTrue()
+            ->and(fileperms($path) & 0777)->toBe(0600)
+            ->and(is_file(sys_get_temp_dir().'/crontinel-outcomes/'.$key.'.json'))->toBeFalse();
+
+        (new OutcomeBuffer)->close($key);
+    } finally {
+        putenv(BackgroundRunContext::VARIABLE);
+    }
+});

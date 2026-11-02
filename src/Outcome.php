@@ -25,4 +25,14 @@ class Outcome
             // A monitoring error must not fail the customer's job.
         }
     }
+
+    /** Text to send as this run's output. Truncated to 10,000 characters. */
+    public static function output(string $text): void
+    {
+        try {
+            app(OutcomeBuffer::class)->output($text);
+        } catch (\Throwable) {
+            // A monitoring error must not fail the customer's job.
+        }
+    }
 }

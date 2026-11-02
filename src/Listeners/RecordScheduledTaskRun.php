@@ -92,7 +92,7 @@ class RecordScheduledTaskRun
         if ($event->task->runInBackground) {
             $this->safely(fn () => $this->background->restore($event->task));
         }
-        $this->finish($event->task, 1, 0, $event->exception?->getMessage());
+        $this->finish($event->task, 1, 0, $event->exception->getMessage());
     }
 
     public function handleBackgroundFinished(ScheduledBackgroundTaskFinished $event): void
@@ -110,13 +110,13 @@ class RecordScheduledTaskRun
         });
     }
 
-    private function finish(object $task, int $exitCode, int $durationMs, ?string $output = null): void
+    private function finish(object $task, int $exitCode, int $durationMs, ?string $failure = null): void
     {
         if (! config('crontinel.cron.enabled', true)) {
             return;
         }
 
-        $this->safely(function () use ($task, $exitCode, $durationMs, $output) {
+        $this->safely(function () use ($task, $exitCode, $durationMs, $failure) {
             $run = $this->runs[$task] ?? [
                 'key' => (string) Str::uuid(),
                 'start' => now()->subMilliseconds($durationMs)->toIso8601String(),
@@ -127,15 +127,49 @@ class RecordScheduledTaskRun
             $run['finished'] = now()->toIso8601String();
             $this->runs[$task] = $run;
             $command = $this->resolveCommand($task);
+            $outcomes = app(OutcomeBuffer::class)->close($run['key']);
+            $explicit = $outcomes['output'] ?? null;
+            // A failure keeps the exception message; explicit output always wins over the captured file.
+            $output = $failure !== null
+                ? OutcomeBuffer::clip(trim($failure."\n\n".($explicit ?? '')))
+                : $explicit ?? $this->capturedOutput($task);
 
             // Local storage failure must not prevent SaaS reporting or fail the job.
             $this->safely(fn () => CronRun::record($command, $exitCode, $durationMs, $output));
             app(SaasReporter::class)->reportCronRun(
                 $command, $exitCode, $durationMs, $output, $run['start'], $run['finished'], $run['key'],
-                app(OutcomeBuffer::class)->close($run['key']),
+                $outcomes,
                 $this->identity($task),
             );
         });
+    }
+
+    /** Tail of the task's output file, when capture_output is on and the file is real. */
+    private function capturedOutput(object $task): ?string
+    {
+        if (! config('crontinel.cron.capture_output', false)) {
+            return null;
+        }
+        $path = $task->output ?? null;
+        if (! is_string($path) || in_array($path, ['', '/dev/null', 'NUL'], true)) {
+            return null;
+        }
+        $text = null;
+        // A read failure must not drop the receipt; it is sent without output.
+        $this->safely(function () use ($path, &$text) {
+            if (! is_file($path) || ! is_readable($path)) {
+                return;
+            }
+            // 4 bytes per character covers the longest UTF-8 sequence.
+            $bytes = OutcomeBuffer::OUTPUT_LIMIT * 4;
+            $size = filesize($path);
+            $chunk = file_get_contents($path, false, null, max(0, (int) $size - $bytes));
+            if (is_string($chunk) && $chunk !== '') {
+                $text = OutcomeBuffer::clip($chunk, true);
+            }
+        });
+
+        return $text;
     }
 
     private function safely(callable $callback): void

@@ -219,6 +219,113 @@ it('sends the closure name when the scheduled call has no command', function () 
     });
 });
 
+function outputRun(?string $file, ?callable $during = null, bool $fail = false): array
+{
+    config(['crontinel.saas_key' => 'test-key']);
+    Http::fake();
+    $task = makeScheduledEvent('reports:generate');
+    $task->runInBackground = false;
+    if ($file !== null) {
+        $task->output = $file;
+    }
+    $listener = app(RecordScheduledTaskRun::class);
+    $listener->handleStarting(new ScheduledTaskStarting($task));
+    if ($during !== null) {
+        $during();
+    }
+    $task->exitCode = 0;
+    $fail
+        ? $listener->handleFailed(new ScheduledTaskFailed($task, new RuntimeException('Disk full')))
+        : $listener->handleFinished(new ScheduledTaskFinished($task, 0.1));
+
+    return Http::recorded()->last()[0]->data();
+}
+
+it('sends explicit output on a successful run', function () {
+    $body = outputRun(null, fn () => Outcome::output('42 invoices sent'));
+
+    expect($body['status'])->toBe('completed')
+        ->and($body['output'])->toBe('42 invoices sent')
+        ->and($body)->not->toHaveKey('outcomes')
+        ->and(CronRun::latest('ran_at')->first()->output)->toBe('42 invoices sent');
+});
+
+it('does not read the output file unless capture is turned on', function () {
+    $file = tempnam(sys_get_temp_dir(), 'crontinel-output-');
+    file_put_contents($file, 'secret report');
+    try {
+        expect(config('crontinel.cron.capture_output'))->toBeFalse()
+            ->and(outputRun($file)['output'])->toBeNull();
+    } finally {
+        @unlink($file);
+    }
+});
+
+it('captures the last 10,000 characters of the output file when enabled', function () {
+    config(['crontinel.cron.capture_output' => true]);
+    $file = tempnam(sys_get_temp_dir(), 'crontinel-output-');
+    file_put_contents($file, 'head'.str_repeat('ü', 12_000).'done');
+    try {
+        $output = outputRun($file)['output'];
+        expect(mb_strlen($output))->toBe(10_000)
+            ->and($output)->toEndWith('done')
+            ->and($output)->not->toContain('head');
+    } finally {
+        @unlink($file);
+    }
+});
+
+it('prefers explicit output over the captured file', function () {
+    config(['crontinel.cron.capture_output' => true]);
+    $file = tempnam(sys_get_temp_dir(), 'crontinel-output-');
+    file_put_contents($file, 'raw log');
+    try {
+        expect(outputRun($file, fn () => Outcome::output('summary'))['output'])->toBe('summary');
+    } finally {
+        @unlink($file);
+    }
+});
+
+it('reports without output when the captured file is missing or the null device', function () {
+    config(['crontinel.cron.capture_output' => true]);
+
+    expect(outputRun(sys_get_temp_dir().'/crontinel-missing-'.bin2hex(random_bytes(6)))['output'])->toBeNull()
+        ->and(outputRun('/dev/null')['output'])->toBeNull();
+});
+
+it('keeps the exception message and appends explicit output on failure', function () {
+    config(['crontinel.cron.capture_output' => true]);
+    $file = tempnam(sys_get_temp_dir(), 'crontinel-output-');
+    file_put_contents($file, 'raw log');
+    try {
+        expect(outputRun($file, null, true)['output'])->toBe('Disk full')
+            ->and(outputRun($file, fn () => Outcome::output('3 of 10 sent'), true)['output'])->toBe("Disk full\n\n3 of 10 sent");
+    } finally {
+        @unlink($file);
+    }
+});
+
+it('captures a background task output file at its real completion', function () {
+    config(['crontinel.saas_key' => 'test-key', 'crontinel.cron.capture_output' => true]);
+    Http::fake();
+    $file = tempnam(sys_get_temp_dir(), 'crontinel-output-');
+    file_put_contents($file, 'background done');
+    try {
+        $task = makeScheduledEvent('background:command');
+        $task->runInBackground = true;
+        $task->output = $file;
+        $listener = app(RecordScheduledTaskRun::class);
+        $listener->handleStarting(new ScheduledTaskStarting($task));
+        $listener->handleFinished(new ScheduledTaskFinished($task, 0.1));
+        Http::assertNothingSent();
+        $task->exitCode = 0;
+        $listener->handleBackgroundFinished(new ScheduledBackgroundTaskFinished($task));
+        Http::assertSent(fn ($request) => $request['status'] === 'completed' && $request['output'] === 'background done');
+    } finally {
+        @unlink($file);
+    }
+});
+
 function makeScheduledEvent(string $command): Event
 {
     $mock = Mockery::mock(Event::class);

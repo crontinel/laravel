@@ -240,3 +240,10 @@ it('exposes bounded delivery counts through the manual command', function () {
     config(['crontinel.reporting.durable' => false]);
     $this->artisan('crontinel:flush-reports')->assertFailed();
 });
+
+it('spools a full 10,000 character output of four-byte characters', function () {
+    app(SaasReporter::class)->reportCronRun('reports:daily', 0, 1000, str_repeat('😀', 10_000),
+        now()->subSecond()->toIso8601String(), now()->toIso8601String(), 'emoji-key');
+
+    expect(glob($this->spool.'/*.json'))->toHaveCount(1);
+});

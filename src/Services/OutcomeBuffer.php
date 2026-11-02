@@ -8,7 +8,10 @@ use Illuminate\Support\Str;
 
 class OutcomeBuffer
 {
-    /** @var list<array{key: string, metrics: array<string, int|float>, timestamps: array<string, string>}> */
+    /** Matches the hosted ingest cap on a receipt's output. */
+    public const OUTPUT_LIMIT = 10000;
+
+    /** @var list<array{key: string, metrics: array<string, int|float>, timestamps: array<string, string>, output?: string}> */
     private array $stack = [];
 
     public function open(string $key): void
@@ -55,7 +58,33 @@ class OutcomeBuffer
         }
     }
 
-    /** @return array{metrics?: array<string, int|float>, timestamps?: array<string, string>}|null */
+    public function output(string $text): void
+    {
+        try {
+            $text = self::clip($text);
+            if ($this->stack !== []) {
+                $this->stack[array_key_last($this->stack)]['output'] = $text;
+
+                return;
+            }
+            $this->writeDetached('output', null, $text);
+        } catch (\Throwable) {
+            // A monitoring error must not fail the customer's job.
+        }
+    }
+
+    /** Valid UTF-8, at most OUTPUT_LIMIT characters: the head, or the tail when $tail is true. */
+    public static function clip(string $text, bool $tail = false): string
+    {
+        $text = mb_scrub($text, 'UTF-8');
+        if (mb_strlen($text, 'UTF-8') <= self::OUTPUT_LIMIT) {
+            return $text;
+        }
+
+        return $tail ? mb_substr($text, -self::OUTPUT_LIMIT, null, 'UTF-8') : mb_substr($text, 0, self::OUTPUT_LIMIT, 'UTF-8');
+    }
+
+    /** @return array{metrics?: array<string, int|float>, timestamps?: array<string, string>, output?: string}|null */
     public function close(string $key): ?array
     {
         try {
@@ -69,11 +98,16 @@ class OutcomeBuffer
                 }
             }
             $stored = $this->readDetached($key);
-
-            return self::normalize([
+            $clean = self::normalize([
                 'metrics' => array_merge($stored['metrics'] ?? [], $frame['metrics'] ?? []),
                 'timestamps' => array_merge($stored['timestamps'] ?? [], $frame['timestamps'] ?? []),
-            ]);
+            ]) ?? [];
+            $output = $frame['output'] ?? $stored['output'] ?? null;
+            if (is_string($output)) {
+                $clean['output'] = self::clip($output);
+            }
+
+            return $clean === [] ? null : $clean;
         } catch (\Throwable) {
             return null;
         }
@@ -108,14 +142,18 @@ class OutcomeBuffer
         return $clean === [] ? null : $clean;
     }
 
-    private function writeDetached(string $bucket, string $name, int|float|string $value): void
+    private function writeDetached(string $bucket, ?string $name, int|float|string $value): void
     {
         $key = $this->detachedKey();
         if ($key === null) {
             return;
         }
         $current = $this->readDetached($key) ?? [];
-        $current[$bucket][$name] = $value;
+        if ($name === null) {
+            $current[$bucket] = $value;
+        } else {
+            $current[$bucket][$name] = $value;
+        }
         $path = $this->path($key);
         $directory = dirname($path);
         if (! is_dir($directory) && ! mkdir($directory, 0700, true) && ! is_dir($directory)) {

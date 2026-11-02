@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-02
+
+### Added
+- `Outcome::output()` sets the text sent as a scheduled run's output. It goes on the terminal receipt only, cut to 10,000 characters. A failed run keeps the exception message and adds this text after it.
+- Opt-in `CRONTINEL_CAPTURE_OUTPUT=true` (`crontinel.cron.capture_output`) sends the last 10,000 characters of a task's output file from `sendOutputTo()`, `appendOutputTo()` or `storeOutput()`, including background tasks. Off by default because output may hold sensitive data. `Outcome::output()` wins when both are set.
+- Documented the AI agent ceiling metric names `tokens_used`, `cost_usd` and `tool_calls` for `Outcome::metric()`. The hosted AI quality check that grades output is opt-in in the hosted app.
+
+### Fixed
+- Durable reporting stores non-ASCII output unescaped, so a full 10,000-character output fits the 64 KiB spool record.
+
 ## [0.8.0] - 2026-10-09
 
 ### Added

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-11-02
+
+### Security
+
+- Background-task outcomes and output are buffered under `storage/framework/crontinel-outcomes` with owner-only (0600) files, instead of the shared system temp directory. Symlinked paths are refused.
+
 ## [0.9.0] - 2026-11-02
 
 ### Added

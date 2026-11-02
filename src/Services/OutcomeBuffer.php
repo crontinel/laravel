@@ -159,7 +159,16 @@ class OutcomeBuffer
         if (! is_dir($directory) && ! mkdir($directory, 0700, true) && ! is_dir($directory)) {
             return;
         }
-        file_put_contents($path, json_encode($current, JSON_THROW_ON_ERROR), LOCK_EX);
+        if (is_link($directory) || is_link($path)) {
+            return;
+        }
+        // Output may hold sensitive data: the file must be readable by the app user only.
+        $umask = umask(0077);
+        try {
+            file_put_contents($path, json_encode($current, JSON_THROW_ON_ERROR), LOCK_EX);
+        } finally {
+            umask($umask);
+        }
     }
 
     /** @return array{metrics?: array<string, int|float>, timestamps?: array<string, string>}|null */
@@ -193,7 +202,7 @@ class OutcomeBuffer
 
     private function path(string $key): string
     {
-        return sys_get_temp_dir().'/crontinel-outcomes/'.$key.'.json';
+        return storage_path('framework/crontinel-outcomes/'.$key.'.json');
     }
 
     private static function validName(string $name): bool

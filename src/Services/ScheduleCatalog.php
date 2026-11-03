@@ -20,8 +20,12 @@ class ScheduleCatalog
 
     private function isPackageCommand(mixed $event): bool
     {
-        $command = (string) ($event->command ?? '');
+        return self::isOwnCommand((string) ($event->command ?? ''));
+    }
 
+    /** Crontinel's own scheduled reporter is plumbing, not a customer job. */
+    public static function isOwnCommand(string $command): bool
+    {
         return str_contains($command, 'crontinel:report') || str_contains($command, 'crontinel:schedule');
     }
 
@@ -39,6 +43,12 @@ class ScheduleCatalog
         $expression = $event->expression ?? null;
         if (is_string($expression) && trim($expression) !== '') {
             $task['expression'] = trim($expression);
+        }
+        // The hosted missed-run check needs the zone the expression runs in.
+        $timezone = $event->timezone ?? config('app.schedule_timezone') ?? config('app.timezone');
+        $timezone = $timezone instanceof \DateTimeZone ? $timezone->getName() : $timezone;
+        if (is_string($timezone) && trim($timezone) !== '') {
+            $task['timezone'] = trim($timezone);
         }
         $environments = $event->environments ?? [];
         if (is_array($environments) && count($environments) === 1 && is_string($environments[0]) && trim($environments[0]) !== '') {

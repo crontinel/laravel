@@ -334,3 +334,16 @@ function makeScheduledEvent(string $command): Event
 
     return $mock;
 }
+
+it('does not record or report crontinel own reporter task', function () {
+    config(['crontinel.saas_key' => 'test-key']);
+    Http::fake();
+    $task = makeScheduledEvent("'/usr/bin/php' 'artisan' crontinel:report");
+
+    $listener = new RecordScheduledTaskRun;
+    $listener->handleStarting(new ScheduledTaskStarting($task));
+    $listener->handleFinished(new ScheduledTaskFinished($task, 0.01));
+
+    expect(CronRun::count())->toBe(0);
+    Http::assertNothingSent();
+});

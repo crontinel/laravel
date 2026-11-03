@@ -8,6 +8,7 @@ use Crontinel\Models\CronRun;
 use Crontinel\Services\BackgroundRunContext;
 use Crontinel\Services\OutcomeBuffer;
 use Crontinel\Services\SaasReporter;
+use Crontinel\Services\ScheduleCatalog;
 use Illuminate\Console\Events\ScheduledBackgroundTaskFinished;
 use Illuminate\Console\Events\ScheduledTaskFailed;
 use Illuminate\Console\Events\ScheduledTaskFinished;
@@ -33,7 +34,7 @@ class RecordScheduledTaskRun
 
     public function handleStarting(ScheduledTaskStarting $event): void
     {
-        if (! config('crontinel.cron.enabled', true)) {
+        if (! config('crontinel.cron.enabled', true) || ScheduleCatalog::isOwnCommand((string) ($event->task->command ?? ''))) {
             return;
         }
 
@@ -128,6 +129,9 @@ class RecordScheduledTaskRun
             $this->runs[$task] = $run;
             $command = $this->resolveCommand($task);
             $outcomes = app(OutcomeBuffer::class)->close($run['key']);
+            if (ScheduleCatalog::isOwnCommand($command)) {
+                return;
+            }
             $explicit = $outcomes['output'] ?? null;
             // A failure keeps the exception message; explicit output always wins over the captured file.
             $output = $failure !== null

@@ -71,7 +71,8 @@ class SaasReporter
         Http::withToken($this->apiKey())
             ->timeout(10)
             ->post($this->saasUrl('/v1/ingest/schedule'), [
-                'source' => 'laravel_schedule',
+                // The owner ran crontinel:schedule to name these, so the server turns on missed-run checks.
+                'source' => 'named_by_user',
                 'tasks' => $tasks,
             ])
             ->throw();

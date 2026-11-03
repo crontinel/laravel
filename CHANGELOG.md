@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-11-03
+
+### Fixed
+
+- `crontinel:schedule` now turns on hosted missed-run alerts. It sends the schedule as named by the owner, with each task's timezone (the task's own, else `app.schedule_timezone`, else `app.timezone`). Before, the hosted app stored the schedule as inventory only.
+- Crontinel's own `crontinel:report` task is no longer recorded or reported as one of your runs.
+
 ## [0.9.1] - 2026-11-02
 
 ### Security

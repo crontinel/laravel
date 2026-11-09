@@ -7,6 +7,7 @@ namespace Crontinel\Laravel\Monitors;
 use Cron\CronExpression;
 use Crontinel\Data\CronStatus;
 use Crontinel\Models\CronRun;
+use Crontinel\Services\ScheduleCatalog;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
@@ -23,6 +24,7 @@ class CronMonitor
         Artisan::all();
 
         return collect(app(Schedule::class)->events())
+            ->reject(fn ($event) => ScheduleCatalog::isOwnCommand((string) ($event->command ?? '')))
             ->map(fn ($event) => $this->statusFor($event))
             ->values()
             ->all();

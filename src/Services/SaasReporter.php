@@ -23,7 +23,7 @@ class SaasReporter
         }
 
         try {
-            $horizon = app(HorizonMonitor::class)->status();
+            $horizon = config('crontinel.horizon.enabled', true) ? app(HorizonMonitor::class)->status() : null;
             $queues = app(QueueMonitor::class)->all();
             $crons = app(CronMonitor::class)->all();
 

@@ -9,6 +9,7 @@ use Crontinel\Laravel\Monitors\CronMonitor;
 use Crontinel\Laravel\Monitors\HorizonMonitor;
 use Crontinel\Laravel\Monitors\QueueMonitor;
 use Crontinel\Services\AlertService;
+use Crontinel\Services\SaasReporter;
 use Illuminate\Console\Application as ConsoleApplication;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Console\Kernel;
@@ -146,4 +147,28 @@ it('loads the console schedule before reading it, for web requests', function ()
     ConsoleApplication::forgetBootstrappers();
 
     expect($commands)->toContain('inspire');
+});
+
+it('does not read Horizon for the status report when it is disabled', function () {
+    config()->set('crontinel.horizon.enabled', false);
+    config()->set('crontinel.saas_key', 'test-key');
+    Http::fake();
+    $horizon = Mockery::mock(HorizonMonitor::class);
+    $horizon->shouldNotReceive('status');
+    app()->instance(HorizonMonitor::class, $horizon);
+    $this->queueMock->shouldReceive('all')->andReturn([]);
+    $this->cronMock->shouldReceive('all')->andReturn([]);
+
+    app(SaasReporter::class)->reportStatus();
+
+    Http::assertSent(fn ($request) => $request['horizon'] === ['enabled' => false]);
+});
+
+it('leaves its own reporter out of the job list', function () {
+    app(Schedule::class)->command('crontinel:report')->everyMinute();
+    app(Schedule::class)->command('inspire')->daily();
+
+    $commands = collect((new CronMonitor)->all())->pluck('command')->join(' ');
+
+    expect($commands)->toContain('inspire')->not->toContain('crontinel:report');
 });

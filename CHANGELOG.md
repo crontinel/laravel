@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.4] - 2026-11-09
+
+### Fixed
+
+- `crontinel:report` no longer reads Horizon when Horizon monitoring is off, which logged two warnings on every report in apps without Horizon.
+- Crontinel's own scheduled commands no longer appear in `crontinel:check`, the dashboard or the hosted status report.
+
 ## [0.9.3] - 2026-11-09
 
 ### Security

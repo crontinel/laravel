@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.9.3] - 2026-11-09
 
+### Security
+
+- The dashboard now checks the `crontinel.view` gate, as the status API already did, so guests are refused even if `auth` is removed from `crontinel.middleware`.
+- The dashboard and status API show the command name without its arguments, which can hold secrets.
+
 ### Fixed
 
 - `crontinel:check`, the `/crontinel` dashboard and the hosted status report crashed on installs from Packagist. `crontinel/php` declares monitor classes with the same names, and its versions were loaded instead. The Laravel monitors now live in `Crontinel\\Laravel\\Monitors`.

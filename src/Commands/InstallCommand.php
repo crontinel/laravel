@@ -29,7 +29,7 @@ class InstallCommand extends Command
 
         if (in_array('auth', config('crontinel.middleware', []), true) && ! Route::has('login')) {
             $this->newLine();
-            $this->warn('This app has no login route, so the dashboard will return a 500. Add authentication, or change crontinel.middleware in config/crontinel.php.');
+            $this->warn('This app has no login route, so the dashboard will return a 500. It needs a signed-in user, so add authentication first.');
         }
 
         $this->newLine();

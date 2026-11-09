@@ -9,6 +9,9 @@ use Crontinel\Laravel\Monitors\CronMonitor;
 use Crontinel\Laravel\Monitors\HorizonMonitor;
 use Crontinel\Laravel\Monitors\QueueMonitor;
 use Crontinel\Services\AlertService;
+use Illuminate\Console\Application as ConsoleApplication;
+use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Contracts\Console\Kernel;
 
 beforeEach(function () {
     $this->loadMigrationsFrom(__DIR__.'/../../database/migrations');
@@ -136,7 +139,11 @@ it('does not warn on install when the app has a login route', function () {
 });
 
 it('loads the console schedule before reading it, for web requests', function () {
-    Artisan::shouldReceive('all')->once()->andReturn([]);
+    app(Kernel::class)->setArtisan(null);
+    ConsoleApplication::starting(fn () => app(Schedule::class)->command('inspire')->daily());
 
-    (new CronMonitor)->all();
+    $commands = collect((new CronMonitor)->all())->pluck('command')->join(' ');
+    ConsoleApplication::forgetBootstrappers();
+
+    expect($commands)->toContain('inspire');
 });

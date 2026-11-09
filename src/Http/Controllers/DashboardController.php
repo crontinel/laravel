@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Crontinel\Http\Controllers;
 
-use Crontinel\Monitors\CronMonitor;
-use Crontinel\Monitors\HorizonMonitor;
-use Crontinel\Monitors\QueueMonitor;
+use Crontinel\Data\CronStatus;
+use Crontinel\Laravel\Monitors\CronMonitor;
+use Crontinel\Laravel\Monitors\HorizonMonitor;
+use Crontinel\Laravel\Monitors\QueueMonitor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Gate;
@@ -22,10 +23,12 @@ class DashboardController extends Controller
 
     public function __invoke(): View
     {
+        Gate::authorize('crontinel.view');
+
         return view('crontinel::dashboard', [
             'horizon' => config('crontinel.horizon.enabled') ? $this->horizon->status() : null,
             'queues' => config('crontinel.queues.enabled') ? $this->queue->all() : [],
-            'crons' => config('crontinel.cron.enabled') ? $this->cron->all() : [],
+            'crons' => config('crontinel.cron.enabled') ? array_map($this->withoutArguments(...), $this->cron->all()) : [],
         ]);
     }
 
@@ -37,8 +40,18 @@ class DashboardController extends Controller
         return response()->json([
             'horizon' => config('crontinel.horizon.enabled') ? $this->horizon->status() : null,
             'queues' => config('crontinel.queues.enabled') ? $this->queue->all() : [],
-            'crons' => config('crontinel.cron.enabled') ? $this->cron->all() : [],
+            'crons' => config('crontinel.cron.enabled') ? array_map($this->withoutArguments(...), $this->cron->all()) : [],
             'checked_at' => now()->toIso8601String(),
         ]);
+    }
+
+    /** Arguments can hold secrets, so web output names the command only. */
+    private function withoutArguments(CronStatus $status): CronStatus
+    {
+        $name = preg_match('/artisan[\'"]?\s+([^\s\'"]+)/', $status->command, $match)
+            ? $match[1]
+            : (str_contains(trim($status->command), ' ') ? strtok(trim($status->command), ' ').' …' : $status->command);
+
+        return new CronStatus(...['command' => $name] + get_object_vars($status));
     }
 }

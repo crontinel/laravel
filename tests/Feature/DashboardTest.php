@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
+use Crontinel\Data\CronStatus;
 use Crontinel\Data\HorizonStatus;
-use Crontinel\Monitors\CronMonitor;
-use Crontinel\Monitors\HorizonMonitor;
-use Crontinel\Monitors\QueueMonitor;
+use Crontinel\Laravel\Monitors\CronMonitor;
+use Crontinel\Laravel\Monitors\HorizonMonitor;
+use Crontinel\Laravel\Monitors\QueueMonitor;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Facades\Gate;
 
@@ -48,3 +49,28 @@ it('returns json from the api status endpoint', function () {
         ->assertStatus(200)
         ->assertJsonStructure(['horizon', 'queues', 'crons', 'checked_at']);
 });
+
+it('refuses guests on the dashboard', function () {
+    $this->get('/crontinel')->assertForbidden();
+});
+
+it('shows the command name without its arguments', function (string $command, string $shown, string $hidden) {
+    $cron = Mockery::mock(CronMonitor::class);
+    $cron->shouldReceive('all')->andReturn([new CronStatus(
+        command: $command,
+        expression: '* * * * *',
+        status: 'ok',
+        lastRunAt: null,
+        lastExitCode: null,
+        lastDurationMs: null,
+        nextDueAt: null,
+    )]);
+    app()->instance(CronMonitor::class, $cron);
+
+    $this->actingAs($this->user)->get('/crontinel')->assertSee($shown)->assertDontSee($hidden);
+    $this->actingAs($this->user)->getJson('/crontinel/api/status')
+        ->assertJsonPath('crons.0.command', fn ($value) => str_contains($value, $shown) && ! str_contains($value, $hidden));
+})->with([
+    'artisan' => ["'/usr/bin/php' 'artisan' reports:send --token=s3cret", 'reports:send', 's3cret'],
+    'shell' => ['curl -H key:s3cret https://example.test', 'curl', 's3cret'],
+]);

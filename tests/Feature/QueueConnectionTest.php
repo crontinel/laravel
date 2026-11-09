@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Crontinel\Monitors\QueueMonitor;
+use Crontinel\Laravel\Monitors\QueueMonitor;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;

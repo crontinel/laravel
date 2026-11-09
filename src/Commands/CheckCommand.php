@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Crontinel\Commands;
 
-use Crontinel\Monitors\CronMonitor;
-use Crontinel\Monitors\HorizonMonitor;
-use Crontinel\Monitors\QueueMonitor;
+use Crontinel\Laravel\Monitors\CronMonitor;
+use Crontinel\Laravel\Monitors\HorizonMonitor;
+use Crontinel\Laravel\Monitors\QueueMonitor;
 use Crontinel\Services\AlertService;
 use Illuminate\Console\Command;
 

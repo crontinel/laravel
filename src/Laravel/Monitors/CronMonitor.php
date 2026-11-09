@@ -2,25 +2,27 @@
 
 declare(strict_types=1);
 
-namespace Crontinel\Monitors;
+namespace Crontinel\Laravel\Monitors;
 
 use Cron\CronExpression;
 use Crontinel\Data\CronStatus;
 use Crontinel\Models\CronRun;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 
 class CronMonitor
 {
-    public function __construct(private readonly Schedule $schedule) {}
-
     /**
      * @return CronStatus[]
      */
     public function all(): array
     {
-        return collect($this->schedule->events())
+        // Web requests don't load routes/console.php or withSchedule(), so the dashboard would list nothing.
+        Artisan::all();
+
+        return collect(app(Schedule::class)->events())
             ->map(fn ($event) => $this->statusFor($event))
             ->values()
             ->all();

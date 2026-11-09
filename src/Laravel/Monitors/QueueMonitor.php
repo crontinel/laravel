@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Crontinel\Monitors;
+namespace Crontinel\Laravel\Monitors;
 
 use Crontinel\Data\QueueStatus;
 use Illuminate\Database\Query\Builder;

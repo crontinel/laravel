@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Crontinel\Services;
 
 use Crontinel\Data\CronStatus;
-use Crontinel\Monitors\CronMonitor;
-use Crontinel\Monitors\HorizonMonitor;
-use Crontinel\Monitors\QueueMonitor;
+use Crontinel\Laravel\Monitors\CronMonitor;
+use Crontinel\Laravel\Monitors\HorizonMonitor;
+use Crontinel\Laravel\Monitors\QueueMonitor;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;

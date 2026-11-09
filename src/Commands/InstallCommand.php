@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Crontinel\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Route;
 
 class InstallCommand extends Command
 {
@@ -25,6 +26,12 @@ class InstallCommand extends Command
         $this->newLine();
         $this->info('✅ Crontinel installed successfully.');
         $this->line("   Dashboard: <href={$dashboardUrl}>{$dashboardUrl}</>");
+
+        if (in_array('auth', config('crontinel.middleware', []), true) && ! Route::has('login')) {
+            $this->newLine();
+            $this->warn('This app has no login route, so the dashboard will return a 500. Add authentication, or change crontinel.middleware in config/crontinel.php.');
+        }
+
         $this->newLine();
         $this->comment('Cron run tracking is automatic — Crontinel listens to Laravel scheduler events.');
         $this->comment('No additional setup required.');

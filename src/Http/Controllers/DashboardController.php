@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Crontinel\Http\Controllers;
 
-use Crontinel\Monitors\CronMonitor;
-use Crontinel\Monitors\HorizonMonitor;
-use Crontinel\Monitors\QueueMonitor;
+use Crontinel\Laravel\Monitors\CronMonitor;
+use Crontinel\Laravel\Monitors\HorizonMonitor;
+use Crontinel\Laravel\Monitors\QueueMonitor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Gate;

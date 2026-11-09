@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Crontinel\Monitors\QueueMonitor;
+use Crontinel\Laravel\Monitors\QueueMonitor;
 use Illuminate\Support\Facades\Redis;
 
 it('matches Laravel Redis size while pending jobs become reserved', function () {

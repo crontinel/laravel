@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Crontinel\Monitors\QueueMonitor;
+use Crontinel\Laravel\Monitors\QueueMonitor;
 use Illuminate\Support\Facades\Redis;
 
 it('falls back to direct reads when a Redis client cannot pipeline queues', function () {

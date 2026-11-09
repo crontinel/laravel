@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Crontinel\Monitors\HorizonMonitor;
+use Crontinel\Laravel\Monitors\HorizonMonitor;
 use Illuminate\Support\Facades\Redis;
 
 it('reads active Horizon master and supervisor records through the Horizon connection', function () {

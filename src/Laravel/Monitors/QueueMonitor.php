@@ -339,12 +339,14 @@ class QueueMonitor
 
             if ($driver === 'redis') {
                 $redisConnection = config("queue.connections.{$connection}.connection", 'default');
-                $keys = Redis::connection($redisConnection)->keys('queues:*');
                 $prefix = (string) config('database.redis.options.prefix', '');
 
-                $queues = collect($keys)
+                // A Redis queue with no jobs has no key, so the keys alone miss an empty queue. Horizon's configured queues
+                // are always reported, so an empty one shows depth 0 and its failed count instead of vanishing.
+                $queues = collect($this->scanKeys($redisConnection, 'queues:*'))
                     ->map(fn ($key) => str_starts_with((string) $key, $prefix) ? substr((string) $key, strlen($prefix)) : (string) $key)
                     ->map(fn ($key) => preg_replace('/^queues:(.+?)(:delayed|:reserved)?$/', '$1', $key))
+                    ->merge($this->horizonQueues($connection))
                     ->unique()
                     ->filter(fn ($q) => ! str_contains((string) $q, ':'))
                     ->values()
@@ -356,6 +358,60 @@ class QueueMonitor
         }
 
         return ['default'];
+    }
+
+    /**
+     * Keys matching a pattern, found with SCAN. KEYS walks the whole keyspace in one blocking call, which stalls a large
+     * production Redis, and this runs every minute.
+     *
+     * @return string[]
+     */
+    private function scanKeys(string $redisConnection, string $pattern): array
+    {
+        $redis = Redis::connection($redisConnection);
+        // Neither phpredis nor Predis applies the key prefix to a SCAN pattern, as both do for KEYS, and both return the
+        // prefixed keys. The caller strips the prefix from what comes back.
+        $match = (string) config('database.redis.options.prefix', '').$pattern;
+        $keys = [];
+        // A fresh scan starts at null on phpredis, which treats an integer 0 as "already finished" and returns false;
+        // Predis starts at 0.
+        $cursor = config('database.redis.client') === 'predis' ? 0 : null;
+        do {
+            $page = $redis->scan($cursor, ['match' => $match, 'count' => 1000]);
+            if (! is_array($page)) {
+                break; // phpredis returns false when the last page is empty
+            }
+            [$cursor, $batch] = $page;
+            foreach ($batch as $key) {
+                $keys[] = (string) $key;
+            }
+        } while ((string) $cursor !== '0');
+
+        return $keys;
+    }
+
+    /**
+     * The queues Horizon's supervisors work on this queue connection, from the config the application already has
+     * (the environment's settings override the defaults, supervisor by supervisor). Empty when Horizon is not configured.
+     *
+     * @return string[]
+     */
+    private function horizonQueues(string $connection): array
+    {
+        $defaults = (array) config('horizon.defaults', []);
+        $environment = (array) config('horizon.environments.'.app()->environment(), []);
+        $queues = [];
+        foreach (array_unique(array_merge(array_keys($defaults), array_keys($environment))) as $name) {
+            $supervisor = array_merge((array) ($defaults[$name] ?? []), (array) ($environment[$name] ?? []));
+            if (($supervisor['connection'] ?? 'redis') !== $connection) {
+                continue;
+            }
+            foreach ((array) ($supervisor['queue'] ?? ['default']) as $queue) {
+                $queues[] = (string) $queue;
+            }
+        }
+
+        return array_values(array_unique(array_filter($queues, fn ($queue) => $queue !== '')));
     }
 
     private function databaseJobs(string $connection): Builder

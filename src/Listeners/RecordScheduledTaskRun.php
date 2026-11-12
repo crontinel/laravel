@@ -71,6 +71,9 @@ class RecordScheduledTaskRun
             $run = ['key' => (string) Str::uuid(), 'start' => now()->toIso8601String()];
             $this->runs[$event->task] = $run;
             app(OutcomeBuffer::class)->open($run['key']);
+            // A scheduled command runs as a child process, which cannot reach this process's buffer. Give it the run's
+            // key so Outcome::metric() there is written to a file that finish() reads back. Restored in finish().
+            $this->safely(fn () => $this->background->begin($event->task, $run['key']));
             app(SaasReporter::class)->reportCronStarted(
                 $this->resolveCommand($event->task), $run['start'], $run['key'], $this->identity($event->task),
             );
@@ -118,6 +121,7 @@ class RecordScheduledTaskRun
         }
 
         $this->safely(function () use ($task, $exitCode, $durationMs, $failure) {
+            $this->background->restore($task);
             $run = $this->runs[$task] ?? [
                 'key' => (string) Str::uuid(),
                 'start' => now()->subMilliseconds($durationMs)->toIso8601String(),

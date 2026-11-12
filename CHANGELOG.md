@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- A count or timestamp recorded with `Outcome::metric()` or `Outcome::timestamp()` inside a command run by the scheduler (`Schedule::command()`) now reaches that run's receipt under default settings. The scheduler runs the command as a separate process, so the value was dropped and the run showed an unknown outcome. Closures were not affected. Tasks that use `runInBackground()` still need `CRONTINEL_BACKGROUND_CORRELATION=true`.
+
 ## [0.9.4] - 2026-11-09
 
 ### Fixed

@@ -60,7 +60,9 @@ Outcome::metric('processed_records', $count);
 Outcome::timestamp('latest_artifact', $backup->toIso8601String());
 ```
 
-Zero is a real value. Use a timestamp with a timezone, such as `2026-10-06T12:00:00Z`. Background tasks need `CRONTINEL_BACKGROUND_CORRELATION=true` so the count survives the child process.
+Zero is a real value. Use a timestamp with a timezone, such as `2026-10-06T12:00:00Z`.
+
+This works inside a command run by the scheduler (`Schedule::command()`) and inside a scheduled closure, with default settings. A task that uses `runInBackground()` also needs `CRONTINEL_BACKGROUND_CORRELATION=true` so the count survives the child process. A task that uses `user()` cannot pass a count, because `sudo` can remove the environment it travels in.
 
 An AI agent job can report its spend with the same call. The hosted app checks these names against an agent ceiling:
 

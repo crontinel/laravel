@@ -20,14 +20,15 @@ class BackgroundRunContext
         $this->previous = new WeakMap;
     }
 
-    public function begin(Event $task): ?array
+    /** A foreground task passes the key of the run it already opened, so its child process reports into that run. */
+    public function begin(Event $task, ?string $key = null): ?array
     {
         // sudo may strip the environment before both the command and schedule:finish.
         if ($task->user !== null) {
             return null;
         }
         $time = now();
-        $run = ['key' => (string) Str::uuid(), 'start' => $time->toIso8601String(),
+        $run = ['key' => $key ?? (string) Str::uuid(), 'start' => $time->toIso8601String(),
             'start_ms' => $time->getTimestampMs(), 'task' => $this->identity($task)];
         $value = base64_encode(json_encode($run, JSON_THROW_ON_ERROR));
         $this->previous[$task] = ['process' => getenv(self::VARIABLE),

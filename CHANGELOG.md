@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.6] - 2026-11-12
+
 ### Fixed
 
 - On a Redis queue connection, a queue with no jobs has no Redis key, so it stopped being reported the moment it drained. Its depth of 0 and its failed-job count disappeared from the status, and the hosted app could not tell the queue had recovered. The queues Horizon's supervisors are configured to work are now always reported, so an empty one shows depth 0 and its failed count.

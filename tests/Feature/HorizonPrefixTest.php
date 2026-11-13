@@ -94,3 +94,33 @@ it('marks a paused supervisor unhealthy while its master stays running', functio
         ->and($status->pausedAt)->not->toBeNull()
         ->and($status->isHealthy())->toBeFalse();
 });
+
+it('keeps the time a pause was first seen, and clears it once Horizon runs again', function () {
+    config()->set('database.redis.horizon', ['host' => '127.0.0.1']);
+    $master = 'paused';
+    $redis = Mockery::mock();
+    $redis->shouldReceive('zrevrangebyscore')->with('masters', '+inf', Mockery::type('int'))->andReturn(['host-master']);
+    $redis->shouldReceive('hmget')->with('master:host-master', ['name', 'status'])->andReturnUsing(function () use (&$master) {
+        return ['host-master', $master];
+    });
+    $redis->shouldReceive('zrevrangebyscore')->with('supervisors', '+inf', Mockery::type('int'))->andReturn([]);
+    $redis->shouldReceive('zcount')->andReturn(0);
+    Redis::shouldReceive('connection')->with('horizon')->andReturn($redis);
+    $check = function (string $status) use (&$master) {
+        $master = $status;
+
+        return app(HorizonMonitor::class)->status();
+    };
+
+    $this->travelTo(now()->setTime(10, 0));
+    $first = $check('paused')->pausedAt;
+
+    $this->travelTo(now()->setTime(10, 30));
+    $later = $check('paused')->pausedAt;
+    expect($later->toIso8601String())->toBe($first->toIso8601String());
+
+    expect($check('running')->pausedAt)->toBeNull();
+
+    $this->travelTo(now()->setTime(11, 0));
+    expect($check('paused')->pausedAt->format('H:i'))->toBe('11:00');
+});

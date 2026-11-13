@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- A paused Horizon reported the time of each check as when it was paused, so every alert said "paused just now" and the hosted app saw a pause that started a minute ago, however long it had lasted. Horizon does not record when it was paused, so the first check that saw it paused now stands in for the start, and it clears once Horizon runs again. This needs a cache store shared between checks, such as `file` or `redis`.
+
 ## [0.9.6] - 2026-11-12
 
 ### Fixed

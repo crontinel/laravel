@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.8] - 2026-11-13
+
 ### Fixed
 
 - On a Redis Cluster, queue discovery read the keys of only one node, so a busy queue that lived on another node was never reported unless Horizon or `crontinel.queues.watch` named it. Discovery now scans every master (phpredis). If scanning fails for any reason, the queues Horizon is configured to work are still reported instead of falling back to `default` alone.

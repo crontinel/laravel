@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `crontinel.queues.connections` reports queues on connections other than `queue.default`, which were never reported before. List a connection with its queues (`['sqs' => ['emails']]`), or with an empty list to discover them. Their queues are named `connection:queue`, so a `default` queue on two connections no longer collides in alerts and thresholds, and their failed-job counts are read per connection. Without the setting, nothing changes.
+
 ## [0.9.8] - 2026-11-13
 
 ### Fixed

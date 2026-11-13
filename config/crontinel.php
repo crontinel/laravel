@@ -57,6 +57,9 @@ return [
     'queues' => [
         'enabled' => true,
         'watch' => [],
+        // Queues on other connections than queue.default, as ['connection' => ['queue', ...]]; an empty list finds them.
+        // They are reported as "connection:queue", so alerts and thresholds for them use that name.
+        'connections' => [],
         'depth_alert_threshold' => 1000,
         'wait_time_alert_seconds' => 300,
     ],

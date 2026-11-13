@@ -23,6 +23,7 @@ class CheckCommand extends Command
         AlertService $alerts,
     ): int {
         $horizonStatus = config('crontinel.horizon.enabled') ? $horizon->status() : null;
+        $missingSupervisors = $horizonStatus ? $horizon->missingSupervisors($horizonStatus) : [];
         $queueStatuses = config('crontinel.queues.enabled') ? $queue->all() : [];
         $cronStatuses = config('crontinel.cron.enabled') ? $cron->all() : [];
 
@@ -44,11 +45,12 @@ class CheckCommand extends Command
         if ($this->option('format') === 'json') {
             $this->line(json_encode([
                 'horizon' => $horizonStatus,
+                'missing_supervisors' => $missingSupervisors,
                 'queues' => $queueStatuses,
                 'crons' => $cronStatuses,
             ], JSON_PRETTY_PRINT));
 
-            return $this->hasAlerts($horizonStatus, $queueStatuses, $cronStatuses)
+            return $this->hasAlerts($horizonStatus, $missingSupervisors, $queueStatuses, $cronStatuses)
                 ? self::FAILURE
                 : self::SUCCESS;
         }
@@ -66,6 +68,10 @@ class CheckCommand extends Command
                     $horizonStatus->isHealthy() ? '<fg=green>✓ ok</>' : '<fg=red>✗ alert</>',
                 ]]
             );
+        }
+
+        if ($missingSupervisors !== []) {
+            $this->line('<fg=red>✗ Horizon supervisor not running: '.implode(', ', $missingSupervisors).'</>');
         }
 
         // Queues
@@ -104,7 +110,7 @@ class CheckCommand extends Command
             );
         }
 
-        $hasAlerts = $this->hasAlerts($horizonStatus, $queueStatuses, $cronStatuses);
+        $hasAlerts = $this->hasAlerts($horizonStatus, $missingSupervisors, $queueStatuses, $cronStatuses);
 
         if ($hasAlerts) {
             $this->newLine();
@@ -117,9 +123,10 @@ class CheckCommand extends Command
         return $hasAlerts ? self::FAILURE : self::SUCCESS;
     }
 
-    private function hasAlerts(?object $horizonStatus, array $queueStatuses, array $cronStatuses): bool
+    private function hasAlerts(?object $horizonStatus, array $missingSupervisors, array $queueStatuses, array $cronStatuses): bool
     {
         return ($horizonStatus && ! $horizonStatus->isHealthy())
+            || $missingSupervisors !== []
             || collect($queueStatuses)->some(fn ($s) => ! $s->isHealthy())
             || collect($cronStatuses)->some(fn ($s) => ! $s->isHealthy());
     }

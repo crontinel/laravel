@@ -23,6 +23,7 @@ beforeEach(function () {
 
     // Bind mocks
     $this->horizonMock = Mockery::mock(HorizonMonitor::class);
+    $this->horizonMock->shouldReceive('missingSupervisors')->andReturn([])->byDefault();
     $this->queueMock = Mockery::mock(QueueMonitor::class);
     $this->cronMock = Mockery::mock(CronMonitor::class);
     $this->alertMock = Mockery::mock(AlertService::class);
@@ -171,4 +172,17 @@ it('leaves its own reporter out of the job list', function () {
     $commands = collect((new CronMonitor)->all())->pluck('command')->join(' ');
 
     expect($commands)->toContain('inspire')->not->toContain('crontinel:report');
+});
+
+it('exits with failure and names a Horizon supervisor that is not running', function () {
+    $this->horizonMock->shouldReceive('status')->andReturn(new HorizonStatus(
+        running: true, supervisors: [], failedJobsPerMinute: 0.0, pausedAt: null,
+    ));
+    $this->horizonMock->shouldReceive('missingSupervisors')->andReturn(['supervisor-b']);
+    $this->queueMock->shouldReceive('all')->andReturn([]);
+    $this->cronMock->shouldReceive('all')->andReturn([]);
+
+    $this->artisan('crontinel:check', ['--no-alerts' => true])
+        ->expectsOutputToContain('Horizon supervisor not running: supervisor-b')
+        ->assertExitCode(1);
 });

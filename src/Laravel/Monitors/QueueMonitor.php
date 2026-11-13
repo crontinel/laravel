@@ -19,21 +19,46 @@ class QueueMonitor
      */
     public function all(): array
     {
-        $watchList = config('crontinel.queues.watch', []);
-        $connection = config('queue.default', 'sync');
+        $default = config('queue.default', 'sync');
+        $extra = [];
+        foreach ((array) config('crontinel.queues.connections', []) as $key => $value) {
+            [$connection, $queues] = is_int($key) ? [(string) $value, []] : [(string) $key, (array) $value];
+            // A name that is not in queue.connections would report a phantom "default" queue.
+            if ($connection !== $default && config("queue.connections.{$connection}") !== null) {
+                $extra[$connection] = $queues;
+            }
+        }
 
+        $statuses = $this->connectionStatuses($default, config('crontinel.queues.watch', []), true, $extra !== []);
+
+        foreach ($extra as $connection => $queues) {
+            $statuses = array_merge($statuses, $this->connectionStatuses($connection, $queues, false, true));
+        }
+
+        return $statuses;
+    }
+
+    /**
+     * Queues on one connection. The default connection keeps the plain queue name, so alerts and thresholds set before
+     * `crontinel.queues.connections` existed still match. Another connection's queues are named "connection:queue",
+     * because the hosted app keys alerts and thresholds by queue name alone and two connections can both have "default".
+     *
+     * @return QueueStatus[]
+     */
+    private function connectionStatuses(string $connection, array $watchList, bool $primary, bool $splitFailedByConnection): array
+    {
         $queues = $this->resolveQueues($connection, $watchList);
         $driver = config("queue.connections.{$connection}.driver", 'sync');
 
         // Batch-fetch data for all queues in one query per driver type
         $depths = $this->batchDepths($driver, $connection, $queues);
         $oldestAges = $this->batchOldestJobAges($driver, $connection, $queues);
-        $failedCounts = $this->batchFailedCounts($queues);
+        $failedCounts = $this->batchFailedCounts($queues, $splitFailedByConnection ? $connection : null);
 
         return collect($queues)
             ->map(fn (string $queue) => new QueueStatus(
                 connection: $connection,
-                queue: $queue,
+                queue: $primary ? $queue : "{$connection}:{$queue}",
                 depth: $depths[$queue] ?? 0,
                 failedCount: $failedCounts[$queue] ?? 0,
                 oldestJobAgeSeconds: $oldestAges[$queue] ?? null,
@@ -169,7 +194,7 @@ class QueueMonitor
     /**
      * @return array<string, int|null>
      */
-    private function batchFailedCounts(array $queues): array
+    private function batchFailedCounts(array $queues, ?string $connection = null): array
     {
         if (empty($queues)) {
             return [];
@@ -178,6 +203,7 @@ class QueueMonitor
         try {
             $rows = DB::table('failed_jobs')
                 ->whereIn('queue', $queues)
+                ->when($connection !== null, fn ($query) => $query->where('connection', $connection))
                 ->select('queue', DB::raw('COUNT(*) as count'))
                 ->groupBy('queue')
                 ->pluck('count', 'queue')

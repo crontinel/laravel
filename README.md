@@ -150,6 +150,7 @@ return [
     'queues' => [
         'enabled'                 => true,
         'watch'                   => [],    // empty = auto-discover
+        'connections'             => [],    // queues on other connections: ['sqs' => ['emails']], empty list = discover
         'depth_alert_threshold'   => 1000,
         'wait_time_alert_seconds' => 300,
     ],
@@ -168,7 +169,9 @@ return [
 ];
 ```
 
-For Redis Cluster, set `queues.watch` to the queue names you use. Automatic key discovery has not been verified across cluster nodes.
+Queue discovery scans every master of a phpredis Redis Cluster. Set `queues.watch` to name your queues instead if you use Predis on a cluster.
+
+Only `queue.default` is reported unless you list more in `queues.connections`. Queues from those connections are named `connection:queue` (for example `sqs:emails`), and that is the name to use in alerts and thresholds. Their failed-job counts come from `failed_jobs` rows with that connection.
 
 ### Environment variables
 

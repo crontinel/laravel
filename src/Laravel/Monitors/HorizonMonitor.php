@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Crontinel\Laravel\Monitors;
 
+use Carbon\Carbon;
 use Crontinel\Data\HorizonStatus;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 
@@ -20,9 +22,35 @@ class HorizonMonitor
             running: $masterStatus === 'running',
             supervisors: $supervisors,
             failedJobsPerMinute: $failedJobsPerMinute,
-            pausedAt: $masterStatus === 'paused' || collect($supervisors)->contains('status', 'paused') ? now() : null,
+            pausedAt: $this->pausedSince($masterStatus === 'paused' || collect($supervisors)->contains('status', 'paused')),
             failedJobsPerMinuteThreshold: (float) config('crontinel.horizon.failed_jobs_per_minute_threshold', 5),
         );
+    }
+
+    /**
+     * Horizon does not record when it was paused, so the first check that saw it paused stands in for the start.
+     * shortcut: needs a cache store shared between checks (not `array`), else every check reports "paused just now".
+     */
+    private function pausedSince(bool $paused): ?Carbon
+    {
+        $key = 'crontinel:horizon:paused_since';
+
+        try {
+            if (! $paused) {
+                Cache::forget($key);
+
+                return null;
+            }
+
+            $since = Cache::get($key);
+            if (! is_string($since)) {
+                Cache::forever($key, $since = now()->toIso8601String());
+            }
+
+            return Carbon::parse($since);
+        } catch (\Throwable) {
+            return $paused ? now() : null;
+        }
     }
 
     private function getMasterStatus(): string

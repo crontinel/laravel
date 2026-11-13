@@ -39,6 +39,7 @@ class SaasReporter
                     'supervisors' => $horizon->supervisors,
                     'failed_per_minute' => $horizon->failedJobsPerMinute,
                     'paused_at' => $horizon->pausedAt?->toIso8601String(),
+                    'missing_supervisors' => app(HorizonMonitor::class)->missingSupervisors($horizon),
                 ] : ['enabled' => false],
                 'queues' => collect($queues)->map(fn ($q) => [
                     'connection' => $q->connection,

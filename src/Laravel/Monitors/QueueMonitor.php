@@ -343,7 +343,13 @@ class QueueMonitor
 
                 // A Redis queue with no jobs has no key, so the keys alone miss an empty queue. Horizon's configured queues
                 // are always reported, so an empty one shows depth 0 and its failed count instead of vanishing.
-                $queues = collect($this->scanKeys($redisConnection, 'queues:*'))
+                try {
+                    $keys = $this->scanKeys($redisConnection, 'queues:*');
+                } catch (\Throwable) {
+                    $keys = []; // keep the queues Horizon is configured to work even when the keys cannot be scanned
+                }
+
+                $queues = collect($keys)
                     ->map(fn ($key) => str_starts_with((string) $key, $prefix) ? substr((string) $key, strlen($prefix)) : (string) $key)
                     ->map(fn ($key) => preg_replace('/^queues:(.+?)(:delayed|:reserved)?$/', '$1', $key))
                     ->merge($this->horizonQueues($connection))
@@ -373,6 +379,23 @@ class QueueMonitor
         // prefixed keys. The caller strips the prefix from what comes back.
         $match = (string) config('database.redis.options.prefix', '').$pattern;
         $keys = [];
+
+        // A cluster keeps its keys on several masters and SCAN only reads the one node it is sent to, so ask each of them.
+        $client = method_exists($redis, 'client') ? $redis->client() : null;
+        if ($client instanceof \RedisCluster) {
+            foreach ($client->_masters() as $node) {
+                $cursor = null;
+                do {
+                    $batch = $client->scan($cursor, $node, $match, 1000);
+                    foreach (is_array($batch) ? $batch : [] as $key) {
+                        $keys[] = (string) $key;
+                    }
+                } while ($batch !== false && (string) $cursor !== '0');
+            }
+
+            return $keys;
+        }
+
         // A fresh scan starts at null on phpredis, which treats an integer 0 as "already finished" and returns false;
         // Predis starts at 0.
         $cursor = config('database.redis.client') === 'predis' ? 0 : null;

@@ -77,3 +77,39 @@ it('matches Laravel queue depth and pending age through PhpRedis Cluster', funct
         }
     }
 });
+
+it('discovers queues on a Redis Cluster, and still reports Horizon queues when keys cannot be scanned', function () {
+    if (getenv('CRONTINEL_LIVE_REDIS_CLUSTER') !== '1') {
+        test()->markTestSkipped('Requires a disposable Redis Cluster and CRONTINEL_LIVE_REDIS_CLUSTER=1.');
+    }
+
+    config()->set('database.redis.client', 'phpredis');
+    config()->set('database.redis.options.prefix', 'crontinel-sdk:');
+    config()->set('database.redis.default', null);
+    config()->set('database.redis.clusters.default', [[
+        'host' => getenv('CRONTINEL_REDIS_HOST') ?: '127.0.0.1',
+        'port' => (int) (getenv('CRONTINEL_REDIS_PORT') ?: 6379),
+    ]]);
+    config()->set('queue.default', 'redis');
+    config()->set('queue.connections.redis', ['driver' => 'redis', 'connection' => 'default', 'queue' => 'default', 'retry_after' => 90]);
+    config()->set('crontinel.queues.watch', []);
+    config()->set('horizon.defaults', ['supervisor-1' => ['connection' => 'redis', 'queue' => ['{idle-horizon-queue}']]]);
+
+    // Several hash tags, so on a multi-node cluster the keys land on different masters.
+    $busy = array_map(fn ($n) => '{crontinel-busy-'.$n.'}', range(1, 8));
+    $queue = app('queue')->connection('redis');
+    foreach ($busy as $name) {
+        $queue->pushRaw(json_encode(['job' => 'x', 'data' => [], 'attempts' => 0, 'createdAt' => time()]), $name);
+    }
+
+    try {
+        $names = array_map(fn ($status) => $status->queue, app(QueueMonitor::class)->all());
+
+        // Every busy queue is found whichever node holds it, and the configured Horizon queue is reported although it has no key.
+        expect($names)->toContain('{idle-horizon-queue}')->and($names)->toContain(...$busy);
+    } finally {
+        foreach ($busy as $name) {
+            Redis::connection('default')->del('queues:'.$name);
+        }
+    }
+});

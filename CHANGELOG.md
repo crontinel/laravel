@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.10] - 2026-11-13
+
 ### Added
 
 - A Horizon supervisor that is configured for the environment but not running is now reported. Horizon only went unhealthy when the master was stopped or paused, so a dead supervisor was caught only later by queue depth or age. The check waits `crontinel.horizon.supervisor_alert_after_seconds` (default 60, the setting existed but was unused) because Horizon restarts a crashed supervisor within seconds. `crontinel:check` names it and exits non-zero, and the report to the hosted app carries `horizon.missing_supervisors`. It needs a cache store shared between checks (`file` or `redis`), and supervisors are matched by name across all hosts.

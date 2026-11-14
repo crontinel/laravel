@@ -105,11 +105,12 @@ return [
     |--------------------------------------------------------------------------
     | Agent Daemon (php artisan crontinel:agent)
     |--------------------------------------------------------------------------
-    | Settings for the remote command execution agent that connects to the
-    | Crontinel SaaS via SSE to receive and execute commands.
+    | Settings for the remote command agent. It polls app.crontinel.com for
+    | commands every poll_interval seconds and runs the allowed ones.
     */
     'agent' => [
         'enabled' => env('CRONTINEL_AGENT_ENABLED', false),
+        'poll_interval' => 5,
         'heartbeat_interval' => 60,
         'max_reconnect_delay' => 60,
         'default_command_timeout' => 300,

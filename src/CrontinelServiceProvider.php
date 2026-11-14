@@ -92,16 +92,22 @@ class CrontinelServiceProvider extends ServiceProvider
 
     private function registerSchedule(): void
     {
-        // Only register the reporter schedule when an API key is configured
-        if (empty(config('crontinel.saas_key'))) {
-            return;
-        }
-
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
-            $schedule->command('crontinel:report')
-                ->everyMinute()
-                ->withoutOverlapping()
-                ->runInBackground();
+            // Report to the hosted app only when an API key is configured
+            if (! empty(config('crontinel.saas_key'))) {
+                $schedule->command('crontinel:report')
+                    ->everyMinute()
+                    ->withoutOverlapping()
+                    ->runInBackground();
+            }
+
+            // Local alerts fire from crontinel:check, so run it whenever a channel is set
+            if (! empty(config('crontinel.alerts.channel'))) {
+                $schedule->command('crontinel:check --format=json')
+                    ->everyMinute()
+                    ->withoutOverlapping()
+                    ->runInBackground();
+            }
         });
     }
 }

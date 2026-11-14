@@ -4,409 +4,162 @@ declare(strict_types=1);
 
 namespace Crontinel\Services;
 
-use Crontinel\Data\SseEvent;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\Process\Process;
 
 class AgentService
 {
-    private const SSE_PATH = '/v1/agent/stream';
+    private const REGISTER_PATH = '/v1/agents/register';
 
-    private const COMMAND_RESULT_PATH = '/v1/agent/command/%s/result';
+    private const HEARTBEAT_PATH = '/v1/agents/heartbeat';
 
-    private const HEARTBEAT_PATH = '/v1/agent/heartbeat';
+    private const COMMANDS_PATH = '/v1/agents/%s/commands';
 
-    private const HEARTBEAT_INTERVAL = 60;
+    private const RESULT_PATH = '/v1/ingest/agent-result';
 
-    private const MAX_RECONNECT_DELAY = 60;
+    /** The hosted app keeps at most this many characters of output. */
+    private const MAX_OUTPUT = 10000;
 
-    private const STREAM_SELECT_TIMEOUT = 1;
-
-    /** Whether the agent should keep running. */
     private bool $running = true;
 
-    /** Accumulated SSE buffer between stream reads. */
-    private string $sseBuffer = '';
+    private ?int $appId = null;
 
-    /** Partial SSE event being built across multiple reads. */
-    private ?SseEvent $currentEvent = null;
-
-    /** Timestamp of the last heartbeat (microtime). */
     private float $lastHeartbeatAt = 0.0;
 
-    /** When the agent started (microtime). */
-    private float $startedAt = 0.0;
+    private int $failures = 0;
 
-    /** Number of consecutive reconnects (for exponential backoff). */
-    private int $reconnectAttempt = 0;
-
-    /** Callable for writing output (bound by the command). */
     private ?\Closure $outputWriter = null;
 
-    /**
-     * Bind an output writer (typically from a Console\Command).
-     */
     public function setOutputWriter(\Closure $writer): void
     {
         $this->outputWriter = $writer;
     }
 
     /**
-     * Run the agent daemon indefinitely (blocking loop).
+     * Run the agent until it receives a stop signal: register, then poll for commands.
      */
     public function run(): void
     {
-        $this->startedAt = microtime(true);
-        $this->lastHeartbeatAt = $this->startedAt;
-
         $this->installSignalHandlers();
-
-        $this->writeOutput('Agent starting...');
+        $this->writeOutput('Agent starting as '.$this->agentId().'...');
 
         while ($this->running) {
             try {
-                $this->connectAndListen();
+                if ($this->appId === null) {
+                    $this->register();
+                    $this->writeOutput('Registered. Polling for commands...');
+                }
+
+                $this->pollOnce();
+
+                if ($this->isHeartbeatDue()) {
+                    $this->sendHeartbeat();
+                }
+
+                $this->failures = 0;
+                $this->pause((int) config('crontinel.agent.poll_interval', 5));
             } catch (\Throwable $e) {
-                Log::error('Crontinel Agent: connection error', [
-                    'error' => $e->getMessage(),
-                ]);
-                $this->writeOutput('Connection error: '.$e->getMessage());
+                $this->failures++;
+                $delay = min(1 << min($this->failures - 1, 6), (int) config('crontinel.agent.max_reconnect_delay', 60));
+                Log::warning('Crontinel Agent: '.$e->getMessage());
+                $this->writeOutput("Error: {$e->getMessage()}. Retrying in {$delay}s...");
+                $this->pause($delay);
             }
-
-            if (! $this->running) {
-                break;
-            }
-
-            $this->reconnectAttempt++;
-            $delay = min(
-                $this->reconnectAttempt > 1
-                    ? (1 << min($this->reconnectAttempt - 1, 5))
-                    : 1,
-                self::MAX_RECONNECT_DELAY,
-            );
-
-            $this->writeOutput("Reconnecting in {$delay}s (attempt {$this->reconnectAttempt})...");
-            sleep($delay);
         }
 
         $this->writeOutput('Agent stopped.');
     }
 
     /**
-     * Open an SSE connection and listen for events.
+     * Register this host with the hosted app and learn which app the API key belongs to.
      */
-    private function connectAndListen(): void
+    public function register(): void
     {
-        $this->resetSseParser();
-        $this->reconnectAttempt = 0;
+        $response = $this->http()->post($this->saasUrl(self::REGISTER_PATH), [
+            'agent_id' => $this->agentId(),
+            'agent_name' => config('app.name'),
+            'metadata' => ['hostname' => gethostname() ?: null, 'php' => PHP_VERSION],
+        ])->throw();
 
-        $url = $this->buildSseUrl();
-        $this->writeOutput("Connecting to {$url}...");
+        $appId = $response->json('app_id');
 
-        $fp = $this->openSseConnection($url);
-
-        if ($fp === false) {
-            return;
+        if (! is_int($appId)) {
+            throw new \RuntimeException('The Crontinel app did not return an app_id. Check CRONTINEL_API_URL.');
         }
 
-        $this->writeOutput('Connected. Listening for commands...');
-
-        if (! $this->readResponseHeaders($fp)) {
-            fclose($fp);
-
-            return;
-        }
-
-        $this->readSseStream($fp);
-
-        fclose($fp);
-        $this->writeOutput('Disconnected.');
+        $this->appId = $appId;
+        $this->lastHeartbeatAt = microtime(true);
     }
 
     /**
-     * @return resource|false
+     * Fetch pending commands and run each one.
      */
-    private function openSseConnection(string $url)
+    public function pollOnce(): void
     {
-        $parsed = parse_url($url);
-        if ($parsed === false || ! isset($parsed['host'])) {
-            Log::error('Crontinel Agent: invalid SSE URL', ['url' => $url]);
+        $response = $this->http()->get($this->saasUrl(sprintf(self::COMMANDS_PATH, $this->appId)))->throw();
 
-            return false;
-        }
-
-        $scheme = $parsed['scheme'] ?? 'https';
-        $host = $parsed['host'];
-        $port = $parsed['port'] ?? ($scheme === 'https' ? 443 : 80);
-        $path = ($parsed['path'] ?? '/').(isset($parsed['query']) ? '?'.$parsed['query'] : '');
-        $transport = $scheme === 'https' ? 'ssl' : 'tcp';
-
-        $remote = "{$transport}://{$host}:{$port}";
-        $context = stream_context_create([
-            'ssl' => [
-                'verify_peer' => true,
-                'verify_peer_name' => true,
-            ],
-        ]);
-
-        $fp = @stream_socket_client($remote, $errno, $errstr, 30, STREAM_CLIENT_CONNECT, $context);
-
-        if ($fp === false) {
-            Log::error('Crontinel Agent: socket connect failed', [
-                'error' => $errstr,
-                'code' => $errno,
-            ]);
-            $this->writeOutput("Socket connect failed: {$errstr} ({$errno})");
-
-            return false;
-        }
-
-        $request = "GET {$path} HTTP/1.1\r\n"
-            ."Host: {$host}\r\n"
-            ."Authorization: Bearer {$this->apiKey()}\r\n"
-            ."Accept: text/event-stream\r\n"
-            ."Cache-Control: no-cache\r\n"
-            ."Connection: keep-alive\r\n"
-            ."User-Agent: crontinel-agent/1.0\r\n"
-            ."\r\n";
-
-        fwrite($fp, $request);
-
-        return $fp;
-    }
-
-    /**
-     * @param  resource  $fp
-     */
-    private function readResponseHeaders($fp): bool
-    {
-        $statusLine = fgets($fp);
-        if ($statusLine === false) {
-            $this->writeOutput('Connection closed while reading response.');
-            Log::warning('Crontinel Agent: connection closed during response headers.');
-
-            return false;
-        }
-
-        if (! preg_match('#^HTTP/\d\.\d\s+2\d{2}#', $statusLine)) {
-            $this->writeOutput('Unexpected response: '.trim($statusLine));
-            Log::warning('Crontinel Agent: non-200 response', ['status_line' => $statusLine]);
-            while (($line = fgets($fp)) !== false && rtrim($line) !== '') {
-                // consume remaining headers
+        foreach ($response->json('data') ?? [] as $trigger) {
+            if (! $this->running) {
+                return;
             }
 
-            return false;
-        }
-
-        // Consume remaining headers until blank line
-        while (($line = fgets($fp)) !== false && rtrim($line) !== '') {
-            //
-        }
-
-        return true;
-    }
-
-    /**
-     * @param  resource  $fp
-     */
-    private function readSseStream($fp): void
-    {
-        stream_set_blocking($fp, false);
-
-        while ($this->running && ! feof($fp)) {
-            $read = [$fp];
-            $write = null;
-            $except = null;
-
-            $result = @stream_select($read, $write, $except, self::STREAM_SELECT_TIMEOUT);
-
-            if ($result === false) {
-                pcntl_signal_dispatch();
-
-                continue;
-            }
-
-            if ($result === 0) {
-                pcntl_signal_dispatch();
-                if ($this->isHeartbeatDue()) {
-                    $this->sendHeartbeat();
-                }
-
-                continue;
-            }
-
-            $chunk = fread($fp, 8192);
-            if ($chunk === false || $chunk === '') {
-                break;
-            }
-
-            $this->feedSseParser($chunk);
-            pcntl_signal_dispatch();
-
-            if ($this->isHeartbeatDue()) {
-                $this->sendHeartbeat();
+            if (is_array($trigger)) {
+                $this->handleCommand($trigger);
             }
         }
     }
 
     /**
-     * Feed raw data into the SSE parser.
+     * Run one command from the hosted app and report the result.
+     *
+     * @param  array{id?: mixed, command?: mixed, payload?: mixed}  $trigger
      */
-    public function feedSseParser(string $data): void
+    public function handleCommand(array $trigger): void
     {
-        $this->sseBuffer .= $data;
-
-        while (($pos = strpos($this->sseBuffer, "\n")) !== false) {
-            $line = substr($this->sseBuffer, 0, $pos);
-            $this->sseBuffer = substr($this->sseBuffer, $pos + 1);
-            $line = rtrim($line, "\r");
-
-            if ($line === '') {
-                $this->dispatchCurrentEvent();
-                $this->currentEvent = null;
-
-                continue;
-            }
-
-            if (! str_contains($line, ':')) {
-                continue;
-            }
-
-            [$field, $value] = explode(':', $line, 2);
-            $value = ltrim($value);
-
-            switch ($field) {
-                case 'event':
-                    if ($this->currentEvent === null) {
-                        $this->currentEvent = new SseEvent;
-                    }
-                    $this->currentEvent->event = $value;
-                    break;
-
-                case 'data':
-                    if ($this->currentEvent === null) {
-                        $this->currentEvent = new SseEvent;
-                    }
-                    $this->currentEvent->data .= $value;
-                    break;
-
-                case 'id':
-                    if ($this->currentEvent === null) {
-                        $this->currentEvent = new SseEvent;
-                    }
-                    $this->currentEvent->id = $value;
-                    break;
-            }
-        }
-    }
-
-    /**
-     * Dispatch a complete SSE event.
-     */
-    private function dispatchCurrentEvent(): void
-    {
-        if ($this->currentEvent === null) {
-            return;
-        }
-
-        $event = $this->currentEvent;
-
-        if ($event->event === 'command' && $event->data !== '') {
-            $this->handleCommandEvent($event->data);
-        } elseif ($event->event === 'ping') {
-            $this->writeOutput('Received server ping.');
-        }
-    }
-
-    /**
-     * Handle an incoming command event.
-     */
-    public function handleCommandEvent(string $jsonData): void
-    {
-        $payload = json_decode($jsonData, true);
-
-        if (! is_array($payload) || ! isset($payload['command_id'], $payload['command'])) {
-            Log::warning('Crontinel Agent: malformed command event', ['data' => $jsonData]);
-            $this->writeOutput('Malformed command event received.');
+        if (! isset($trigger['id'], $trigger['command']) || ! is_string($trigger['command'])) {
+            Log::warning('Crontinel Agent: malformed command', ['trigger' => $trigger]);
 
             return;
         }
 
-        $commandId = $payload['command_id'];
-        $commandString = $payload['command'];
-        $env = $payload['env'] ?? [];
-        $timeout = $payload['timeout'] ?? 300;
+        $triggerId = (string) $trigger['id'];
+        $commandString = $trigger['command'];
+        $payload = is_array($trigger['payload'] ?? null) ? $trigger['payload'] : [];
 
         if (! $this->isCommandAllowed($commandString)) {
-            $reason = 'Command rejected: not in allowlist';
-
             Log::warning('Crontinel Agent: command rejected by allowlist', [
-                'command_id' => $commandId,
+                'trigger_id' => $triggerId,
                 'command' => $commandString,
             ]);
-            $this->writeOutput("Command [{$commandId}] rejected: not in allowlist");
-
-            $rejectedAt = now()->toIso8601String();
-
-            $this->reportCommandResult(
-                commandId: $commandId,
-                status: 'failed',
-                exitCode: -1,
-                output: $reason,
-                startedAt: $rejectedAt,
-                finishedAt: $rejectedAt,
-                durationMs: 0,
-            );
+            $this->writeOutput("Command [{$triggerId}] rejected: not in allowlist");
+            $this->reportResult($triggerId, 'failed', -1, '', 'Command rejected: not in allowlist');
 
             return;
         }
 
-        $this->writeOutput("Executing command [{$commandId}]: {$commandString}");
-
-        $startedAt = now();
-        $startMicro = microtime(true);
-
-        $process = Process::fromShellCommandline(
-            command: $commandString,
-            env: $env,
-            timeout: $timeout,
-        );
+        $this->writeOutput("Executing command [{$triggerId}]: {$commandString}");
+        $start = microtime(true);
 
         try {
+            $process = Process::fromShellCommandline(
+                command: $commandString,
+                env: is_array($payload['env'] ?? null) ? $payload['env'] : [],
+                timeout: (float) ($payload['timeout'] ?? config('crontinel.agent.default_command_timeout', 300)),
+            );
             $process->run();
-            $exitCode = $process->getExitCode();
-            $output = $process->getOutput().$process->getErrorOutput();
-            $finishedAt = now();
-            $durationMs = (int) round((microtime(true) - $startMicro) * 1000);
+
+            $exitCode = (int) $process->getExitCode();
             $status = $exitCode === 0 ? 'completed' : 'failed';
+            $output = $process->getOutput().$process->getErrorOutput();
+            $durationMs = (int) round((microtime(true) - $start) * 1000);
 
-            $this->writeOutput("Command [{$commandId}] finished: {$status} ({$durationMs}ms, exit {$exitCode})");
-
-            $this->reportCommandResult(
-                commandId: $commandId,
-                status: $status,
-                exitCode: $exitCode,
-                output: $output,
-                startedAt: $startedAt->toIso8601String(),
-                finishedAt: $finishedAt->toIso8601String(),
-                durationMs: $durationMs,
-            );
+            $this->writeOutput("Command [{$triggerId}] finished: {$status} ({$durationMs}ms, exit {$exitCode})");
+            $this->reportResult($triggerId, $status, $exitCode, $output, $status === 'failed' ? "Exited with code {$exitCode}" : null);
         } catch (\Throwable $e) {
-            $finishedAt = now();
-            $durationMs = (int) round((microtime(true) - $startMicro) * 1000);
-
-            $this->writeOutput("Command [{$commandId}] error: {$e->getMessage()}");
-
-            $this->reportCommandResult(
-                commandId: $commandId,
-                status: 'failed',
-                exitCode: -1,
-                output: $e->getMessage(),
-                startedAt: $startedAt->toIso8601String(),
-                finishedAt: $finishedAt->toIso8601String(),
-                durationMs: $durationMs,
-            );
+            $this->writeOutput("Command [{$triggerId}] error: {$e->getMessage()}");
+            $this->reportResult($triggerId, 'failed', -1, '', $e->getMessage());
         }
     }
 
@@ -436,76 +189,62 @@ class AgentService
         return false;
     }
 
-    /**
-     * Report a command result to the SaaS.
-     */
-    private function reportCommandResult(
-        string $commandId,
-        string $status,
-        int $exitCode,
-        string $output,
-        string $startedAt,
-        string $finishedAt,
-        int $durationMs,
-    ): void {
+    private function reportResult(string $triggerId, string $status, int $exitCode, string $output, ?string $error): void
+    {
         try {
-            $response = Http::withToken($this->apiKey())
-                ->timeout(10)
-                ->post($this->saasUrl(sprintf(self::COMMAND_RESULT_PATH, $commandId)), [
-                    'command_id' => $commandId,
-                    'status' => $status,
-                    'exit_code' => $exitCode,
-                    'output' => $output,
-                    'started_at' => $startedAt,
-                    'finished_at' => $finishedAt,
-                    'duration_ms' => $durationMs,
-                ]);
+            $response = $this->http()->post($this->saasUrl(self::RESULT_PATH), array_filter([
+                'trigger_id' => $triggerId,
+                'status' => $status,
+                'exit_code' => $exitCode,
+                // Keep the end of the output, where errors usually are.
+                'output' => mb_substr($output, -self::MAX_OUTPUT),
+                'error_message' => $error === null ? null : mb_substr($error, 0, 1000),
+            ], fn ($value) => $value !== null));
 
             if (! $response->successful()) {
                 Log::warning('Crontinel Agent: failed to report command result', [
-                    'command_id' => $commandId,
+                    'trigger_id' => $triggerId,
                     'status_code' => $response->status(),
                 ]);
             }
         } catch (\Throwable $e) {
             Log::warning('Crontinel Agent: exception reporting command result', [
-                'command_id' => $commandId,
+                'trigger_id' => $triggerId,
                 'error' => $e->getMessage(),
             ]);
         }
     }
 
-    /**
-     * Send a heartbeat to the SaaS.
-     */
     private function sendHeartbeat(): void
     {
         $this->lastHeartbeatAt = microtime(true);
-        $uptime = (int) round(microtime(true) - $this->startedAt);
 
-        try {
-            $response = Http::withToken($this->apiKey())
-                ->timeout(10)
-                ->post($this->saasUrl(self::HEARTBEAT_PATH), [
-                    'status' => 'connected',
-                    'uptime_seconds' => $uptime,
-                ]);
+        $response = $this->http()->post($this->saasUrl(self::HEARTBEAT_PATH), [
+            'agent_id' => $this->agentId(),
+        ]);
 
-            if (! $response->successful()) {
-                Log::warning('Crontinel Agent: heartbeat failed', [
-                    'status_code' => $response->status(),
-                ]);
-            }
-        } catch (\Throwable $e) {
-            Log::warning('Crontinel Agent: heartbeat exception', [
-                'error' => $e->getMessage(),
-            ]);
+        // The hosted app forgot this agent; register again on the next loop.
+        if ($response->status() === 404) {
+            $this->appId = null;
+        } elseif (! $response->successful()) {
+            Log::warning('Crontinel Agent: heartbeat failed', ['status_code' => $response->status()]);
         }
     }
 
     private function isHeartbeatDue(): bool
     {
-        return (microtime(true) - $this->lastHeartbeatAt) >= self::HEARTBEAT_INTERVAL;
+        return (microtime(true) - $this->lastHeartbeatAt) >= (int) config('crontinel.agent.heartbeat_interval', 60);
+    }
+
+    /** Sleep in one-second steps so a stop signal is handled promptly. */
+    private function pause(int $seconds): void
+    {
+        for ($i = 0; $i < $seconds && $this->running; $i++) {
+            sleep(1);
+            if (function_exists('pcntl_signal_dispatch')) {
+                pcntl_signal_dispatch();
+            }
+        }
     }
 
     private function installSignalHandlers(): void
@@ -516,35 +255,17 @@ class AgentService
             return;
         }
 
-        $self = $this; // PHP 8.2+ $this is allowed in closures, but being explicit for readability
+        $stop = function (): void {
+            $this->writeOutput('Received stop signal. Shutting down gracefully...');
+            $this->running = false;
+        };
 
-        pcntl_signal(SIGTERM, function () use ($self): void {
-            $self->writeOutput('Received SIGTERM. Shutting down gracefully...');
-            $self->running = false;
-        });
-
-        pcntl_signal(SIGINT, function () use ($self): void {
-            $self->writeOutput('Received SIGINT. Shutting down gracefully...');
-            $self->running = false;
-        });
+        pcntl_signal(SIGTERM, $stop);
+        pcntl_signal(SIGINT, $stop);
 
         if (defined('SIGQUIT')) {
-            pcntl_signal(SIGQUIT, function () use ($self): void {
-                $self->writeOutput('Received SIGQUIT. Shutting down gracefully...');
-                $self->running = false;
-            });
+            pcntl_signal(SIGQUIT, $stop);
         }
-    }
-
-    private function resetSseParser(): void
-    {
-        $this->sseBuffer = '';
-        $this->currentEvent = null;
-    }
-
-    private function buildSseUrl(): string
-    {
-        return $this->saasUrl(self::SSE_PATH);
     }
 
     public function isConfigured(): bool
@@ -552,10 +273,19 @@ class AgentService
         return ! empty(config('crontinel.saas_key'));
     }
 
+    private function agentId(): string
+    {
+        return gethostname() ?: 'laravel-agent';
+    }
+
+    private function http(): PendingRequest
+    {
+        return Http::withToken($this->apiKey())->acceptJson()->timeout(15);
+    }
+
     private function writeOutput(string $message): void
     {
-        $timestamp = date('Y-m-d H:i:s');
-        $formatted = "[{$timestamp}] Crontinel Agent: {$message}";
+        $formatted = '['.date('Y-m-d H:i:s')."] Crontinel Agent: {$message}";
 
         if ($this->outputWriter !== null) {
             ($this->outputWriter)($formatted);

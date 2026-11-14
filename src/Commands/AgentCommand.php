@@ -13,7 +13,7 @@ class AgentCommand extends Command
                             {--systemd : Output systemd unit file and exit}
                             {--supervisor : Output supervisor config and exit}';
 
-    protected $description = 'Start the Crontinel agent daemon — connects to app.crontinel.com via SSE to receive and execute commands';
+    protected $description = 'Start the Crontinel agent daemon — polls app.crontinel.com for commands and runs the allowed ones';
 
     public function handle(AgentService $agent): int
     {

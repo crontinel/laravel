@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.12] - 2026-11-14
+
 ### Changed
 
 - Local alerts now work without extra setup. When `CRONTINEL_ALERT_CHANNEL` is set, the package schedules `crontinel:check` every minute, which is what fires them. Before, alerts were never sent unless you scheduled the command yourself. If you did, remove your entry; a second run is harmless (alerts are deduplicated) but redundant. `crontinel:check` is also left out of the job list and hosted reports, like `crontinel:report`.

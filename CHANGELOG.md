@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.11] - 2026-11-14
+
 ### Fixed
 
 - `php artisan crontinel:agent` could not connect to app.crontinel.com. It opened a stream at `/api/v1/agent/stream`, which the hosted app never served. It now registers at `/api/v1/agents/register`, polls `/api/v1/agents/{app_id}/commands` every `crontinel.agent.poll_interval` seconds (default 5), and reports results to `/api/v1/ingest/agent-result`. The command allowlist is unchanged. Output sent back is cut to its last 10,000 characters, the most the hosted app keeps.

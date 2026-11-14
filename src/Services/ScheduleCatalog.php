@@ -26,7 +26,7 @@ class ScheduleCatalog
     /** Crontinel's own scheduled reporter is plumbing, not a customer job. */
     public static function isOwnCommand(string $command): bool
     {
-        return str_contains($command, 'crontinel:report') || str_contains($command, 'crontinel:schedule');
+        return str_contains($command, 'crontinel:report') || str_contains($command, 'crontinel:schedule') || str_contains($command, 'crontinel:check');
     }
 
     private function task(mixed $event): ?array

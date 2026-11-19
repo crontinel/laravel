@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.13] - 2026-11-19
+
+### Changed
+
+- `crontinel:install` now mentions the optional `CRONTINEL_API_URL` next to `CRONTINEL_API_KEY`, with its default (`https://app.crontinel.com`).
+
 ## [0.9.12] - 2026-11-14
 
 ### Changed

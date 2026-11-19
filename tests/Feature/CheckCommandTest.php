@@ -127,6 +127,7 @@ it('warns on install when the app has no login route', function () {
 
     $this->artisan('crontinel:install')
         ->expectsOutputToContain('no login route')
+        ->expectsOutputToContain('CRONTINEL_API_URL=https://app.crontinel.com')
         ->assertSuccessful();
 });
 

@@ -38,6 +38,7 @@ class InstallCommand extends Command
         $this->newLine();
         $this->line('To connect to the hosted SaaS, add to your .env:');
         $this->line('   <fg=yellow>CRONTINEL_API_KEY=your-api-key</>');
+        $this->line('   <fg=yellow>CRONTINEL_API_URL=https://app.crontinel.com</> (optional; this is the default)');
 
         return self::SUCCESS;
     }
